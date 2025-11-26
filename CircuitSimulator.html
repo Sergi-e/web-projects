@@ -3,49 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Logic Circuit Simulator</title>
+  <title>Logic Circuit Simulator — Inputs Mode</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#10b981;--muted:#94a3b8;--glass: rgba(255,255,255,0.03)}
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#071021 0%, #0b1530 100%); color:#e6eef6; padding:18px}
-    .app{max-width:1100px;margin:0 auto}
-    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6);margin-bottom:12px}
+    :root{
+      --bg:#f7f7f8; --card:#ffffff; --text:#0f1724; --muted:#475569;
+      --accent:#0b7285; --good:#10b981; --bad:#ef4444;
+    }
+    html,body{height:100%;margin:0}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); padding:20px; display:flex; justify-content:center}
+    .app{max-width:1100px;width:100%}
+    .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,36,0.06);margin-bottom:12px}
     header h1{margin:0;font-size:20px}
-    .row{display:flex;gap:10px;align-items:flex-start}
+    .row{display:flex;gap:12px;align-items:flex-start}
     .col{flex:1}
-    textarea,input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-    button{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#042017;cursor:pointer}
-    .controls{display:flex;gap:8px;margin-top:8px;align-items:center}
-    #svgwrap{background:var(--glass);border-radius:8px;padding:10px;overflow:auto;height:420px}
+    input[type="text"]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef6;background:transparent;color:inherit;font-size:15px}
+    button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:white;cursor:pointer;font-weight:600}
+    button.secondary{background:#e6eef6;color:var(--text)}
+    .controls{display:flex;gap:8px;margin-top:10px;align-items:center}
+    #svgwrap{background:#fbfdff;border-radius:8px;padding:10px;overflow:auto;height:420px;border:1px solid #e6eef6}
     .small{font-size:13px;color:var(--muted)}
-    .vars{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .var{background:rgba(255,255,255,0.03);padding:6px;border-radius:8px;display:flex;align-items:center;gap:6px}
-    table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid rgba(255,255,255,0.03);padding:6px;text-align:center}
-    .ok{color:var(--accent)}
-    .err{color:#fb7185}
-    footer{margin-top:12px;font-size:12px;color:var(--muted)}
+    .vars-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .var-box{display:flex;align-items:center;gap:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid #eef6f9}
+    .var-box label{min-width:28px}
+    .result-badge{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border:1px solid #f1f5f9;padding:8px;text-align:center;font-size:14px}
+    footer{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+    .error{color:var(--bad)}
+    .ok{color:var(--good)}
   </style>
 </head>
 <body>
   <div class="app">
     <header class="card">
       <h1>Logic Circuit Simulator</h1>
-      <div class="small">Type a propositional logic expression and the app will parse it, draw a simple circuit and let you test variable values. Use symbols or words like AND, OR, NOT.</div>
+      <div class="small">Type an expression, parse it, then enter 0 or 1 for each variable and click Apply inputs to see the output update.</div>
     </header>
 
     <section class="card row">
       <div class="col">
-        <label class="small">Expression (use ! or ~ for NOT, & for AND, | for OR). Example: (a & b) | !c</label>
-        <input id="expr" value="(a & b) | !c" />
+        <label class="small">Expression</label>
+        <input id="expr" value="(A and B) OR NOT C" aria-label="logical expression" />
         <div class="controls">
-          <button id="parseBtn">Parse & Draw</button>
-          <button id="truthBtn">Show Truth Table</button>
+          <button id="parseBtn">Parse and draw</button>
+          <button id="applyBtn" class="secondary">Apply inputs</button>
           <div id="status" class="small" style="margin-left:8px"></div>
         </div>
-        <div id="varsArea" style="margin-top:10px"></div>
+
+        <div id="inputsArea" style="margin-top:12px"></div>
+
+        <div style="margin-top:10px">
+          <span class="small">Output:</span>
+          <span id="outputBadge" class="result-badge" aria-live="polite">—</span>
+        </div>
       </div>
-      <div style="width:420px">
-        <div id="svgwrap"><svg id="svg" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg"></svg></div>
+
+      <div style="width:460px">
+        <div id="svgwrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMinYMin meet"></svg></div>
       </div>
     </section>
 
@@ -58,218 +72,334 @@
   </div>
 
 <script>
-// ---------- Tokenizer and normalizer
+// ------------- Parser and normalizer -------------
+function normalizeWords(s){
+  // replace word operators (case-insensitive) with symbols the tokenizer understands
+  return s.replace(/\bAND\b/gi,'&')
+          .replace(/\bOR\b/gi,'|')
+          .replace(/\bNOT\b/gi,'!')
+          .replace(/\bXOR\b/gi,'^')
+          .replace(/→/g,'->')
+          .replace(/↔/g,'<->');
+}
+
 function tokenize(s){
   if(!s) return [];
-  // normalize word operators (any case)
-  s = s.replace(/\bAND\b/gi, '&')
-       .replace(/\bOR\b/gi, '|')
-       .replace(/\bNOT\b/gi, '!')
-       .replace(/\bXOR\b/gi, '^');
-  const tokens=[];
-  // accept symbols, unicode arrows and words already normalized
-  const re=/\s*([A-Za-z][A-Za-z0-9_]*|<->|->|↔|→|\(|\)|~|!|&|\||\^|∧|∨|¬)\s*/g;
+  s = normalizeWords(s);
+  // accept variables (letters+digits+underscore), multi-char operators, and common symbols
+  const re = /\s*([A-Za-z][A-Za-z0-9_]*|<->|->|\(|\)|~|!|&|\||\^|∧|∨|¬)\s*/g;
+  const tokens = [];
   let m;
-  while((m=re.exec(s))!==null){
-    tokens.push(m[1]);
-  }
+  while((m = re.exec(s)) !== null) tokens.push(m[1]);
   return tokens;
 }
 
-// precedence map
-const prec = { '!':5, '~':5, 'NOT':5, '&':4, 'AND':4, '^':3, '|':2, 'OR':2, '->':1, '<->':0 };
+const prec = { '!':5, '~':5, '&':4, '^':3, '|':2, '->':1, '<->':0 };
 
 function toPostfix(tokens){
-  const out=[]; const ops=[];
-  const isUnary = t => t==='!'||t==='~'||t==='¬'||t.toUpperCase()==='NOT';
+  const out = [], ops = [];
+  const isUnary = t => t==='!'||t==='~';
   for(let i=0;i<tokens.length;i++){
     let t = tokens[i];
-    if(/^[A-Za-z]/.test(t)) out.push({type:'var',val:t});
-    else if(isUnary(t)) ops.push(t==='¬'?'!':t);
+    if(/^[A-Za-z]/.test(t)) out.push({type:'var', val:t});
+    else if(isUnary(t)) ops.push(t);
     else if(t==='(') ops.push(t);
     else if(t===')'){
-      while(ops.length && ops[ops.length-1] !== '(') out.push({type:'op',val:ops.pop()});
-      if(ops.length && ops[ops.length-1]==='(') ops.pop();
+      while(ops.length && ops[ops.length-1] !== '(') out.push({type:'op', val: ops.pop()});
+      if(ops.length && ops[ops.length-1] === '(') ops.pop();
     } else {
-      // normalize some remaining symbols
-      if(t==='∧') t='&'; if(t==='∨') t='|'; if(t==='¬') t='!'; if(t==='→') t='->'; if(t==='↔') t='<->';
-      while(ops.length && ops[ops.length-1] !== '(' && ( (prec[ops[ops.length-1]]||0) >= (prec[t]||0) )) out.push({type:'op',val:ops.pop()});
+      // normalize unicode logical symbols
+      if(t==='∧') t='&'; if(t==='∨') t='|'; if(t==='¬') t='!';
+      while(ops.length && ops[ops.length-1] !== '(' && ( (prec[ops[ops.length-1]]||0) >= (prec[t]||0) )) out.push({type:'op', val: ops.pop()});
       ops.push(t);
     }
   }
-  while(ops.length) out.push({type:'op',val:ops.pop()});
+  while(ops.length) out.push({type:'op', val: ops.pop()});
   return out;
 }
 
 function postfixToAST(postfix){
-  const st=[];
+  const st = [];
   for(const tk of postfix){
-    if(tk.type==='var') st.push({kind:'VAR',name:tk.val});
+    if(tk.type === 'var') st.push({kind:'VAR', name: tk.val});
     else {
       const op = tk.val;
-      if(op==='!'||op==='~'||op.toUpperCase()==='NOT'){
-        const a=st.pop(); if(!a) throw 'Bad expression (missing operand for NOT)';
-        st.push({kind:'NOT',child:a});
+      if(op === '!' || op === '~'){
+        const a = st.pop(); if(!a) throw 'Missing operand for NOT';
+        st.push({kind:'NOT', child: a});
       } else {
-        const b=st.pop(); const a=st.pop(); if(!a||!b) throw 'Bad expression (missing operands)';
-        const kind = (op==='&'?'AND':op==='|'?'OR':op==='^'?'XOR':op);
-        st.push({kind:kind, left:a, right:b});
+        const b = st.pop(), a = st.pop(); if(!a || !b) throw 'Missing operands for operator';
+        const kind = (op==='&'?'AND': op==='|'?'OR': op==='^'?'XOR': op);
+        st.push({kind: kind, left: a, right: b});
       }
     }
   }
-  if(st.length!==1) throw 'Invalid expression';
+  if(st.length !== 1) throw 'Invalid expression';
   return st[0];
 }
 
-// desugar -> and <-> into AND/OR/NOT
+// desugar -> and <-> to AND/OR/NOT
 function desugar(node){
   if(!node) return null;
-  if(node.kind==='VAR') return node;
-  if(node.kind==='NOT') return {kind:'NOT', child: desugar(node.child)};
-  const L = desugar(node.left);
-  const R = desugar(node.right);
-  if(node.kind==='->'){
-    return {kind:'OR', left:{kind:'NOT', child:L}, right:R};
-  }
-  if(node.kind==='<->'){
-    return {kind:'OR',
-      left:{kind:'AND', left:L, right:R},
-      right:{kind:'AND', left:{kind:'NOT', child:L}, right:{kind:'NOT', child:R}}
-    };
-  }
-  return {kind:node.kind, left:L, right:R};
+  if(node.kind === 'VAR') return node;
+  if(node.kind === 'NOT') return {kind:'NOT', child: desugar(node.child)};
+  const L = desugar(node.left), R = desugar(node.right);
+  if(node.kind === '->') return {kind:'OR', left: {kind:'NOT', child: L}, right: R};
+  if(node.kind === '<->') return {
+    kind:'OR',
+    left: {kind:'AND', left: L, right: R},
+    right: {kind:'AND', left: {kind:'NOT', child: L}, right: {kind:'NOT', child: R}}
+  };
+  return {kind: node.kind, left: L, right: R};
 }
 
 function parseExpression(s){
-  if(!s) throw 'Empty expression';
-  // normalize unicode arrows to ASCII forms so tokenizer can pick them up
-  s = s.replace(/→/g,'->').replace(/↔/g,'<->');
-  const tokens = tokenize(s.replace(/∧/g,'&').replace(/∨/g,'|').replace(/¬/g,'!'));
-  if(tokens.length===0) throw 'No tokens found';
+  if(!s || !s.trim()) throw 'Empty expression';
+  const tokens = tokenize(s);
+  if(tokens.length === 0) throw 'No tokens found';
   const pf = toPostfix(tokens);
   const ast0 = postfixToAST(pf);
   const ast = desugar(ast0);
   return ast;
 }
 
-// evaluation and utilities
+// ------------- Evaluation and utilities -------------
 function evaluate(node, assign){
   if(!node) return false;
-  if(node.kind==='VAR') return !!assign[node.name];
-  if(node.kind==='NOT') return !evaluate(node.child, assign);
-  if(node.kind==='AND') return evaluate(node.left,assign) && evaluate(node.right,assign);
-  if(node.kind==='OR') return evaluate(node.left,assign) || evaluate(node.right,assign);
-  if(node.kind==='XOR') return !!(evaluate(node.left,assign) ^ evaluate(node.right,assign));
+  if(node.kind === 'VAR') return !!(assign[node.name]);
+  if(node.kind === 'NOT') return !evaluate(node.child, assign);
+  if(node.kind === 'AND') return evaluate(node.left, assign) && evaluate(node.right, assign);
+  if(node.kind === 'OR') return evaluate(node.left, assign) || evaluate(node.right, assign);
+  if(node.kind === 'XOR') return !!(evaluate(node.left, assign) ^ evaluate(node.right, assign));
   return false;
 }
 
 function collectVars(node, set){
   if(!node) return;
-  if(node.kind==='VAR') set.add(node.name);
-  if(node.kind==='NOT') collectVars(node.child,set);
-  if(node.left) { collectVars(node.left,set); collectVars(node.right,set); }
+  if(node.kind === 'VAR') set.add(node.name);
+  if(node.kind === 'NOT') collectVars(node.child, set);
+  if(node.left) { collectVars(node.left, set); collectVars(node.right, set); }
 }
 
-// layout and drawing
+// ------------- Layout & drawing (simple) -------------
 function layoutTree(root){
-  const nodes=[];
-  function dfs(n,depth){
+  const nodes = [];
+  function dfs(n, depth){
     if(!n) return;
-    n._depth=depth; nodes.push(n);
-    if(n.kind==='NOT') dfs(n.child, depth+1);
+    n._depth = depth; nodes.push(n);
+    if(n.kind === 'NOT') dfs(n.child, depth+1);
     else if(n.left) { dfs(n.left, depth+1); dfs(n.right, depth+1); }
   }
-  dfs(root,0);
-  let y=0;
+  dfs(root, 0);
+
+  let y = 0;
   function inorder(n){
     if(!n) return;
-    if(n.kind==='VAR'){ n._y = y++; return; }
-    if(n.kind==='NOT'){ inorder(n.child); n._y = y++; return; }
+    if(n.kind === 'VAR'){ n._y = y++; return; }
+    if(n.kind === 'NOT'){ inorder(n.child); n._y = y++; return; }
     inorder(n.left); inorder(n.right); n._y = y++;
   }
   inorder(root);
-  for(const n of nodes){ n._x = n._depth; n._ypos = n._y*70 + 40; n._xpos = n._x*160 + 60; }
+
+  for(const n of nodes){
+    n._x = n._depth;
+    n._ypos = n._y * 70 + 40;
+    n._xpos = n._x * 160 + 60;
+  }
   return nodes;
 }
 
-function clearSVG(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+function clearSVG(svg){
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+}
 
-function drawCircuit(svg, root, evalAssign){
+function drawCircuit(svg, root, assign){
   clearSVG(svg);
   if(!root) return;
   const nodes = layoutTree(root);
-  function line(x1,y1,x2,y2,cls){
-    const l = document.createElementNS('http://www.w3.org/2000/svg','path');
+
+  function path(x1,y1,x2,y2,color){
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
     const d = `M ${x1} ${y1} C ${x1+30} ${y1} ${x2-30} ${y2} ${x2} ${y2}`;
-    l.setAttribute('d',d); l.setAttribute('stroke-width','3'); l.setAttribute('fill','none');
-    l.setAttribute('stroke', cls || '#6b7280'); l.setAttribute('stroke-linecap','round');
-    svg.appendChild(l); return l;
+    p.setAttribute('d', d);
+    p.setAttribute('stroke', color);
+    p.setAttribute('stroke-width', '3');
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(p);
   }
+
   function drawNode(n){
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('transform',`translate(${n._xpos},${n._ypos})`);
-    const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    bg.setAttribute('x','-42'); bg.setAttribute('y','-22'); bg.setAttribute('width','84'); bg.setAttribute('height','44'); bg.setAttribute('rx','8');
-    bg.setAttribute('fill','#041226'); bg.setAttribute('stroke','#213547'); bg.setAttribute('stroke-width','1');
-    g.appendChild(bg);
-    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x','0'); t.setAttribute('y','6'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','13'); t.setAttribute('fill','#cbd5e1');
+    g.setAttribute('transform', `translate(${n._xpos},${n._ypos})`);
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x','-42'); rect.setAttribute('y','-22'); rect.setAttribute('width','84'); rect.setAttribute('height','44'); rect.setAttribute('rx','8');
+    rect.setAttribute('fill', '#ffffff'); rect.setAttribute('stroke','#e6eef6'); rect.setAttribute('stroke-width','1');
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x','0'); text.setAttribute('y','6'); text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','13'); text.setAttribute('fill','#0f1724');
     let label = n.kind;
-    if(n.kind==='VAR') label = n.name;
-    if(n.kind==='NOT') label = 'NOT';
-    t.textContent = label;
-    g.appendChild(t);
+    if(n.kind === 'VAR') label = n.name;
+    if(n.kind === 'NOT') label = 'NOT';
+    text.textContent = label;
+    g.appendChild(rect); g.appendChild(text);
     svg.appendChild(g);
-    return g;
+    return {g, rect};
   }
+
   const map = new Map();
-  for(const n of nodes){ map.set(n, drawNode(n)); }
-  function drawConnections(n){
-    if(n.kind==='VAR') return;
-    if(n.kind==='NOT'){
+  for(const n of nodes) map.set(n, drawNode(n));
+
+  function drawConn(n){
+    if(n.kind === 'VAR') return;
+    if(n.kind === 'NOT'){
       const A = n.child;
-      const val = evaluate(A, evalAssign);
-      line(A._xpos+42,A._ypos, n._xpos-42,n._ypos, val? '#10b981' : '#ef4444');
-      return drawConnections(A);
+      const val = evaluate(A, assign);
+      path(A._xpos + 42, A._ypos, n._xpos - 42, n._ypos, val ? '#10b981' : '#ef4444');
+      return drawConn(A);
     }
-    const L = n.left; const R = n.right;
-    const valL = evaluate(L, evalAssign); const valR = evaluate(R, evalAssign);
-    line(L._xpos+42,L._ypos, n._xpos-42,n._ypos, valL? '#10b981' : '#ef4444');
-    line(R._xpos+42,R._ypos, n._xpos-42,n._ypos, valR? '#10b981' : '#ef4444');
-    drawConnections(L); drawConnections(R);
+    const L = n.left, R = n.right;
+    const vL = evaluate(L, assign), vR = evaluate(R, assign);
+    path(L._xpos + 42, L._ypos, n._xpos - 42, n._ypos, vL ? '#10b981' : '#ef4444');
+    path(R._xpos + 42, R._ypos, n._xpos - 42, n._ypos, vR ? '#10b981' : '#ef4444');
+    drawConn(L); drawConn(R);
   }
-  drawConnections(root);
+
+  drawConn(root);
+
+  // color nodes by their outputs
   for(const n of nodes){
-    const g = map.get(n);
-    const bg = g.querySelector('rect');
-    const out = evaluate(n,evalAssign);
-    bg.setAttribute('fill', out? '#052018' : '#041226');
-    bg.setAttribute('stroke', out? '#064e3b' : '#213547');
+    const el = map.get(n);
+    const outv = evaluate(n, assign);
+    el.rect.setAttribute('fill', outv ? '#ecfffa' : '#ffffff');
+    el.rect.setAttribute('stroke', outv ? '#bbf7d0' : '#e6eef6');
   }
 }
 
-// ---------- UI glue
+// ------------- UI glue -------------
 const exprInput = document.getElementById('expr');
 const parseBtn = document.getElementById('parseBtn');
-const truthBtn = document.getElementById('truthBtn');
-const status = document.getElementById('status');
-const varsArea = document.getElementById('varsArea');
+const applyBtn = document.getElementById('applyBtn');
+const statusEl = document.getElementById('status');
+const inputsArea = document.getElementById('inputsArea');
 const svg = document.getElementById('svg');
 const tableWrap = document.getElementById('tableWrap');
-let currentAST=null; let currentVars=[];
+const outputBadge = document.getElementById('outputBadge');
 
-function setStatus(msg, ok=true){ status.textContent = msg; status.className = ok? 'small ok':'small err'; }
+let currentAST = null;
+let currentVars = [];
 
-function buildVarsUI(vars){
-  varsArea.innerHTML='';
-  const wrap = document.createElement('div'); wrap.className='vars';
+// show status
+function setStatus(msg, ok=true){
+  statusEl.textContent = msg;
+  statusEl.className = 'small ' + (ok? 'ok' : 'error');
+}
+
+// build input fields for each variable (text fields expecting 0 or 1)
+function buildInputs(vars){
+  inputsArea.innerHTML = '';
+  if(vars.length === 0) return;
+  const wrapper = document.createElement('div'); wrapper.className = 'vars-grid';
+  vars.forEach(v => {
+    const box = document.createElement('div'); box.className = 'var-box';
+    const lbl = document.createElement('label'); lbl.textContent = v;
+    const input = document.createElement('input'); input.type = 'text'; input.value = '0';
+    input.style.width = '48px';
+    input.id = 'in_' + v;
+    box.appendChild(lbl); box.appendChild(input);
+    wrapper.appendChild(box);
+  });
+  inputsArea.appendChild(wrapper);
+}
+
+// read inputs and build assign map; returns {ok, assign, err}
+function readInputs(){
   const assign = {};
-  for(const v of vars){
-    assign[v]=false;
-    const div = document.createElement('div'); div.className='var';
-    const cb = document.createElement('input'); cb.type='checkbox'; cb.id='cb_'+v;
-    cb.addEventListener('change', ()=>{ assign[v]=cb.checked; drawWithAssign(assign); buildTruthTable(currentAST); });
-    const lbl = document.createElement('label'); lbl.htmlFor='cb_'+v; lbl.style.marginLeft='6px'; lbl.textContent=v;
-    div.appendChild(cb); div.appendChild(lbl); wrap.appendChild(div);
+  for(const v of currentVars){
+    const el = document.getElementById('in_' + v);
+    if(!el) { assign[v] = false; continue; }
+    const val = el.value.trim();
+    if(!(val === '0' || val === '1')){
+      return {ok:false, err: `Invalid value for ${v}: use 0 or 1`};
+    }
+    assign[v] = (val === '1');
   }
-  varsArea.appendChild(
+  return {ok:true, assign};
+}
+
+// create truth table (full) for reference
+function buildTruthTable(ast){
+  if(!ast) { tableWrap.innerHTML = ''; return; }
+  const vars = currentVars;
+  const n = vars.length;
+  if(n > 12) { tableWrap.innerHTML = '<div class="small">Too many variables to show full truth table (limit 12)</div>'; return; }
+  const total = 1 << n;
+  const tbl = document.createElement('table');
+  const thead = document.createElement('thead'); const thr = document.createElement('tr');
+  vars.forEach(v => { const th = document.createElement('th'); th.textContent = v; thr.appendChild(th); });
+  const thOut = document.createElement('th'); thOut.textContent = 'OUT'; thr.appendChild(thOut);
+  thead.appendChild(thr); tbl.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  for(let i=0;i<total;i++){
+    const tr = document.createElement('tr');
+    const assign = {};
+    for(let j=0;j<n;j++){
+      const bit = !!((i >> (n-1-j)) & 1);
+      assign[vars[j]] = bit;
+      const td = document.createElement('td'); td.textContent = bit ? '1' : '0'; tr.appendChild(td);
+    }
+    const outv = evaluate(ast, assign);
+    const tdOut = document.createElement('td'); tdOut.textContent = outv ? '1' : '0';
+    tr.appendChild(tdOut);
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+  tableWrap.innerHTML = ''; tableWrap.appendChild(tbl);
+}
+
+// parse button handler
+parseBtn.addEventListener('click', () => {
+  const expr = exprInput.value;
+  try{
+    const ast = parseExpression(expr);
+    currentAST = ast;
+    const s = new Set(); collectVars(ast, s);
+    currentVars = Array.from(s).sort();
+    buildInputs(currentVars);
+    // default assign: all zeros
+    const defaultAssign = {};
+    currentVars.forEach(v => defaultAssign[v] = false);
+    drawCircuit(svg, currentAST, defaultAssign);
+    buildTruthTable(currentAST);
+    outputBadge.textContent = '—';
+    setStatus('Parsed successfully', true);
+  } catch(err){
+    setStatus(String(err), false);
+    tableWrap.innerHTML = '';
+    inputsArea.innerHTML = '';
+    clearSVG(svg);
+    outputBadge.textContent = '—';
+  }
+});
+
+// apply inputs handler: read text inputs, update drawing and show output
+applyBtn.addEventListener('click', () => {
+  if(!currentAST){ setStatus('Parse an expression first', false); return; }
+  const r = readInputs();
+  if(!r.ok){ setStatus(r.err, false); return; }
+  setStatus('Inputs applied', true);
+  drawCircuit(svg, currentAST, r.assign);
+  const outv = evaluate(currentAST, r.assign);
+  outputBadge.textContent = outv ? '1' : '0';
+  outputBadge.style.background = outv ? '#ecfffa' : '#fff';
+  outputBadge.style.color = outv ? '#064e3b' : '#0f1724';
+});
+
+// Enter key parses
+exprInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') parseBtn.click(); });
+
+// auto-parse at load
+window.addEventListener('load', () => { parseBtn.click(); });
+
+</script>
+</body>
+</html>
