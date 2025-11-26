@@ -1,49 +1,51 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Logic Circuit Simulator — Inputs Mode</title>
-  <style>
-    :root{
-      --bg:#f7f7f8; --card:#ffffff; --text:#0f1724; --muted:#475569;
-      --accent:#0b7285; --good:#10b981; --bad:#ef4444;
-    }
-    html,body{height:100%;margin:0}
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); padding:20px; display:flex; justify-content:center}
-    .app{max-width:1100px;width:100%}
-    .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,36,0.06);margin-bottom:12px}
-    header h1{margin:0;font-size:20px}
-    .row{display:flex;gap:12px;align-items:flex-start}
-    .col{flex:1}
-    input[type="text"]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef6;background:transparent;color:inherit;font-size:15px}
-    button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:white;cursor:pointer;font-weight:600}
-    button.secondary{background:#e6eef6;color:var(--text)}
-    .controls{display:flex;gap:8px;margin-top:10px;align-items:center}
-    #svgwrap{background:#fbfdff;border-radius:8px;padding:10px;overflow:auto;height:420px;border:1px solid #e6eef6}
-    .small{font-size:13px;color:var(--muted)}
-    .vars-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-    .var-box{display:flex;align-items:center;gap:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid #eef6f9}
-    .var-box label{min-width:28px}
-    .result-badge{display:inline-block;padding:6px 8px;border-radius:8px;font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{border:1px solid #f1f5f9;padding:8px;text-align:center;font-size:14px}
-    footer{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
-    .error{color:var(--bad)}
-    .ok{color:var(--good)}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Logic Circuit Simulator — Logisim-style</title>
+<style>
+  :root{
+    --bg:#f7f7f8; --card:#ffffff; --text:#0f1724; --muted:#475569;
+    --accent:#0b7285; --good:#10b981; --bad:#ef4444; --wire:#6b7280;
+  }
+  html,body{height:100%;margin:0}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); padding:18px; display:flex;justify-content:center}
+  .app{max-width:1200px;width:100%}
+  .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,36,0.06);margin-bottom:12px}
+  header h1{margin:0;font-size:20px}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .col{flex:1}
+  input[type="text"]{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef6;background:transparent;color:inherit;font-size:15px}
+  button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;color:white;cursor:pointer}
+  button.secondary{background:#e6eef6;color:var(--text)}
+  .controls{display:flex;gap:8px;margin-top:10px;align-items:center}
+  #svgwrap{background:#fff;border-radius:8px;padding:10px;overflow:auto;height:520px;border:1px solid #eef6f9}
+  .small{font-size:13px;color:var(--muted)}
+  .inputs-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .input-box{display:flex;align-items:center;gap:8px;background:#fff;padding:8px;border-radius:8px;border:1px solid #eef6f9}
+  .input-box label{min-width:28px;font-weight:700}
+  .result-badge{display:inline-block;padding:6px 10px;border-radius:8px;font-weight:700;margin-left:8px}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border:1px solid #f1f5f9;padding:8px;text-align:center;font-size:14px}
+  footer{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+  .error{color:var(--bad)}
+  .ok{color:var(--good)}
+  /* small helper for gate labels */
+  .gate-label{font-size:12px;fill:#0f1724}
+</style>
 </head>
 <body>
   <div class="app">
     <header class="card">
       <h1>Logic Circuit Simulator</h1>
-      <div class="small">Type an expression, parse it, then enter 0 or 1 for each variable and click Apply inputs to see the output update.</div>
+      <div class="small">Type an expression (words or symbols), parse it, then enter 0 or 1 for each variable and click Apply inputs. Gate shapes follow Logisim style.</div>
     </header>
 
     <section class="card row">
       <div class="col">
         <label class="small">Expression</label>
-        <input id="expr" value="(A and B) OR NOT C" aria-label="logical expression" />
+        <input id="expr" value="(p and q) <_> (p -> r)" aria-label="logical expression" />
         <div class="controls">
           <button id="parseBtn">Parse and draw</button>
           <button id="applyBtn" class="secondary">Apply inputs</button>
@@ -52,14 +54,14 @@
 
         <div id="inputsArea" style="margin-top:12px"></div>
 
-        <div style="margin-top:10px">
+        <div style="margin-top:12px">
           <span class="small">Output:</span>
           <span id="outputBadge" class="result-badge" aria-live="polite">—</span>
         </div>
       </div>
 
-      <div style="width:460px">
-        <div id="svgwrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMinYMin meet"></svg></div>
+      <div style="width:620px">
+        <div id="svgwrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMinYMin meet"></svg></div>
       </div>
     </section>
 
@@ -72,25 +74,30 @@
   </div>
 
 <script>
-// ------------- Parser and normalizer -------------
+// ----------------- Utilities, parser and normalization -----------------
 function normalizeWords(s){
-  // replace word operators (case-insensitive) with symbols the tokenizer understands
   return s.replace(/\bAND\b/gi,'&')
           .replace(/\bOR\b/gi,'|')
           .replace(/\bNOT\b/gi,'!')
           .replace(/\bXOR\b/gi,'^')
+          .replace(/<__?>/g,'<->')   // accept "<_>" or "<__>" -> biconditional
           .replace(/→/g,'->')
           .replace(/↔/g,'<->');
 }
 
+// Tokenizer: variables become uppercase to be case-insensitive
 function tokenize(s){
   if(!s) return [];
   s = normalizeWords(s);
-  // accept variables (letters+digits+underscore), multi-char operators, and common symbols
   const re = /\s*([A-Za-z][A-Za-z0-9_]*|<->|->|\(|\)|~|!|&|\||\^|∧|∨|¬)\s*/g;
   const tokens = [];
   let m;
-  while((m = re.exec(s)) !== null) tokens.push(m[1]);
+  while((m = re.exec(s)) !== null){
+    const tk = m[1];
+    // if token is a variable (starts with letter), convert to uppercase
+    if(/^[A-Za-z]/.test(tk)) tokens.push(tk.toUpperCase());
+    else tokens.push(tk);
+  }
   return tokens;
 }
 
@@ -98,19 +105,18 @@ const prec = { '!':5, '~':5, '&':4, '^':3, '|':2, '->':1, '<->':0 };
 
 function toPostfix(tokens){
   const out = [], ops = [];
-  const isUnary = t => t==='!'||t==='~';
+  const isUnary = t => t === '!' || t === '~';
   for(let i=0;i<tokens.length;i++){
     let t = tokens[i];
-    if(/^[A-Za-z]/.test(t)) out.push({type:'var', val:t});
+    if(/^[A-Z]/.test(t)) out.push({type:'var', val:t});
     else if(isUnary(t)) ops.push(t);
-    else if(t==='(') ops.push(t);
-    else if(t===')'){
+    else if(t === '(') ops.push(t);
+    else if(t === ')'){
       while(ops.length && ops[ops.length-1] !== '(') out.push({type:'op', val: ops.pop()});
       if(ops.length && ops[ops.length-1] === '(') ops.pop();
     } else {
-      // normalize unicode logical symbols
       if(t==='∧') t='&'; if(t==='∨') t='|'; if(t==='¬') t='!';
-      while(ops.length && ops[ops.length-1] !== '(' && ( (prec[ops[ops.length-1]]||0) >= (prec[t]||0) )) out.push({type:'op', val: ops.pop()});
+      while(ops.length && ops[ops.length-1] !== '(' && ((prec[ops[ops.length-1]]||0) >= (prec[t]||0))) out.push({type:'op', val: ops.pop()});
       ops.push(t);
     }
   }
@@ -129,7 +135,7 @@ function postfixToAST(postfix){
         st.push({kind:'NOT', child: a});
       } else {
         const b = st.pop(), a = st.pop(); if(!a || !b) throw 'Missing operands for operator';
-        const kind = (op==='&'?'AND': op==='|'?'OR': op==='^'?'XOR': op);
+        const kind = (op === '&' ? 'AND' : op === '|' ? 'OR' : op === '^' ? 'XOR' : op);
         st.push({kind: kind, left: a, right: b});
       }
     }
@@ -138,13 +144,13 @@ function postfixToAST(postfix){
   return st[0];
 }
 
-// desugar -> and <-> to AND/OR/NOT
+// desugar -> and <-> into AND/OR/NOT
 function desugar(node){
   if(!node) return null;
   if(node.kind === 'VAR') return node;
   if(node.kind === 'NOT') return {kind:'NOT', child: desugar(node.child)};
   const L = desugar(node.left), R = desugar(node.right);
-  if(node.kind === '->') return {kind:'OR', left: {kind:'NOT', child: L}, right: R};
+  if(node.kind === '->') return {kind:'OR', left:{kind:'NOT', child: L}, right:R};
   if(node.kind === '<->') return {
     kind:'OR',
     left: {kind:'AND', left: L, right: R},
@@ -163,10 +169,10 @@ function parseExpression(s){
   return ast;
 }
 
-// ------------- Evaluation and utilities -------------
+// ----------------- Evaluation helpers -----------------
 function evaluate(node, assign){
   if(!node) return false;
-  if(node.kind === 'VAR') return !!(assign[node.name]);
+  if(node.kind === 'VAR') return !!assign[node.name];
   if(node.kind === 'NOT') return !evaluate(node.child, assign);
   if(node.kind === 'AND') return evaluate(node.left, assign) && evaluate(node.right, assign);
   if(node.kind === 'OR') return evaluate(node.left, assign) || evaluate(node.right, assign);
@@ -181,7 +187,7 @@ function collectVars(node, set){
   if(node.left) { collectVars(node.left, set); collectVars(node.right, set); }
 }
 
-// ------------- Layout & drawing (simple) -------------
+// ----------------- Layout & Logisim-style gate drawing -----------------
 function layoutTree(root){
   const nodes = [];
   function dfs(n, depth){
@@ -192,6 +198,7 @@ function layoutTree(root){
   }
   dfs(root, 0);
 
+  // simple inorder positioning to spread leaves vertically
   let y = 0;
   function inorder(n){
     if(!n) return;
@@ -203,12 +210,139 @@ function layoutTree(root){
 
   for(const n of nodes){
     n._x = n._depth;
-    n._ypos = n._y * 70 + 40;
-    n._xpos = n._x * 160 + 60;
+    n._ypos = n._y * 90 + 60;
+    n._xpos = n._x * 240 + 140;
   }
   return nodes;
 }
 
+// Gate drawing functions that mimic Logisim look using SVG paths
+function drawAND(g, x, y){
+  // width 84, height 44 similar to earlier but rounded
+  const w = 84, h = 44;
+  const rx = w/2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  // D-shaped: left rectangle then right semicircle
+  const left = x - w/2, top = y - h/2;
+  const d = `M ${left} ${top} h ${w/2} a ${rx} ${h/2} 0 0 1 0 ${h} h ${-w/2} Z`;
+  path.setAttribute('d', d); path.setAttribute('fill','#fff'); path.setAttribute('stroke','#e6eef6'); path.setAttribute('stroke-width','1.5');
+  return {group:path, bbox:{x:left,y:top,w:h? w:84,h:h}};
+}
+function drawOR(g, x, y){
+  // OR shape using path
+  const w = 84, h = 44;
+  const left = x - w/2, top = y - h/2;
+  const back = left - 12;
+  // build OR path (approx)
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d = `M ${back} ${top} 
+             C ${left} ${top} ${left + w*0.25} ${top} ${left + w*0.5} ${top}
+             C ${left + w*0.85} ${top} ${left + w} ${top + h*0.25} ${left + w} ${top + h*2/4}
+             C ${left + w} ${top + h*0.75} ${left + w*0.85} ${top + h} ${left + w*0.5} ${top + h}
+             C ${left + w*0.25} ${top + h} ${left} ${top + h} ${back} ${top + h}
+             C ${left + 6} ${top + h/2} ${left + 6} ${top + h/2} ${back} ${top}
+             Z`;
+  path.setAttribute('d', d); path.setAttribute('fill','#fff'); path.setAttribute('stroke','#e6eef6'); path.setAttribute('stroke-width','1.5');
+  return {group:path, bbox:{x:back,y:top,w:w+12,h:h}};
+}
+function drawXOR(g, x, y){
+  // XOR = OR plus leading curve
+  const w = 84, h = 44;
+  const left = x - w/2, top = y - h/2;
+  const back = left - 12;
+  const lead = left - 8;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d = `M ${lead} ${top} 
+             C ${left-2} ${top} ${left + w*0.25} ${top} ${left + w*0.5} ${top}
+             C ${left + w*0.85} ${top} ${left + w} ${top + h*0.25} ${left + w} ${top + h*2/4}
+             C ${left + w} ${top + h*0.75} ${left + w*0.85} ${top + h} ${left + w*0.5} ${top + h}
+             C ${left + w*0.25} ${top + h} ${left-2} ${top + h} ${lead} ${top + h}
+             C ${left + 6} ${top + h/2} ${left + 6} ${top + h/2} ${lead} ${top}
+             Z`;
+  path.setAttribute('d', d); path.setAttribute('fill','#fff'); path.setAttribute('stroke','#e6eef6'); path.setAttribute('stroke-width','1.5');
+
+  // extra arc near the input (the XOR extra curve)
+  const arc = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const ax = left - 8;
+  const ad = `M ${ax} ${top} C ${ax+10} ${top + h*0.1} ${ax+10} ${top + h*0.9} ${ax} ${top + h}`;
+  arc.setAttribute('d', ad); arc.setAttribute('fill','none'); arc.setAttribute('stroke','#e6eef6'); arc.setAttribute('stroke-width','1.5');
+
+  const gnode = document.createElementNS('http://www.w3.org/2000/svg','g');
+  gnode.appendChild(path); gnode.appendChild(arc);
+  return {group:gnode, bbox:{x:lead,y:top,w:w+16,h:h}};
+}
+function drawNOT(g, x, y){
+  // triangle + small circle (inverter)
+  const w = 60, h = 44;
+  const left = x - w/2, top = y - h/2;
+  const tri = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const p1 = `${left} ${top}`;
+  const p2 = `${left + w} ${y}`;
+  const p3 = `${left} ${top + h}`;
+  const d = `M ${p1} L ${p2} L ${p3} Z`;
+  tri.setAttribute('d', d); tri.setAttribute('fill','#fff'); tri.setAttribute('stroke','#e6eef6'); tri.setAttribute('stroke-width','1.5');
+
+  const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  const cx = left + w + 8; const cy = y; const r = 6;
+  circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+  circle.setAttribute('fill','#fff'); circle.setAttribute('stroke','#e6eef6'); circle.setAttribute('stroke-width','1.5');
+
+  const gnode = document.createElementNS('http://www.w3.org/2000/svg','g');
+  gnode.appendChild(tri); gnode.appendChild(circle);
+  return {group:gnode, bbox:{x:left,y:top,w:w + 8 + r*2,h:h}, outX: cx + r};
+}
+
+// Helper to draw a gate of given kind at (x,y), return object with element and connector x positions
+function drawGate(svg, node){
+  const x = node._xpos, y = node._ypos;
+  let el, bb;
+  if(node.kind === 'AND'){
+    const r = drawAND(svg, x, y); el = r.group; bb = r.bbox;
+    svg.appendChild(el);
+    return {el, inLeft: x - 42, inRight: x - 20, outX: x + 42};
+  }
+  if(node.kind === 'OR'){
+    const r = drawOR(svg, x, y); el = r.group; bb = r.bbox;
+    svg.appendChild(el);
+    return {el, inLeft: x - 46, inRight: x - 20, outX: x + 46};
+  }
+  if(node.kind === 'XOR'){
+    const r = drawXOR(svg, x, y); el = r.group; bb = r.bbox;
+    svg.appendChild(el);
+    return {el, inLeft: x - 50, inRight: x - 20, outX: x + 50};
+  }
+  if(node.kind === 'NOT'){
+    const r = drawNOT(svg, x, y); el = r.group; bb = r.bbox;
+    svg.appendChild(el);
+    return {el, inLeft: x - 34, outX: r.outX};
+  }
+  // VAR: draw small rounded rectangle with label
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform', `translate(${x},${y})`);
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x','-28'); rect.setAttribute('y','-18'); rect.setAttribute('width','56'); rect.setAttribute('height','36'); rect.setAttribute('rx','6');
+  rect.setAttribute('fill','#fff'); rect.setAttribute('stroke','#e6eef6'); rect.setAttribute('stroke-width','1.2');
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x','0'); t.setAttribute('y','6'); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','13'); t.setAttribute('fill','#0f1724');
+  t.textContent = node.name;
+  g.appendChild(rect); g.appendChild(t); svg.appendChild(g);
+  return {el: g, outX: x + 28, inLeft: x - 28};
+}
+
+// Draw an elbow wire (right-angle) from (x1,y1) to (x2,y2) colored by val
+function drawWire(svg, x1,y1,x2,y2, val){
+  const midX = (x1 + x2) / 2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+  path.setAttribute('d', d);
+  path.setAttribute('stroke', val ? '#10b981' : '#ef4444');
+  path.setAttribute('stroke-width','3');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke-linecap','round');
+  svg.appendChild(path);
+}
+
+// ----------------- Render circuit (compose) -----------------
 function clearSVG(svg){
   while(svg.firstChild) svg.removeChild(svg.firstChild);
 }
@@ -218,64 +352,69 @@ function drawCircuit(svg, root, assign){
   if(!root) return;
   const nodes = layoutTree(root);
 
-  function path(x1,y1,x2,y2,color){
-    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
-    const d = `M ${x1} ${y1} C ${x1+30} ${y1} ${x2-30} ${y2} ${x2} ${y2}`;
-    p.setAttribute('d', d);
-    p.setAttribute('stroke', color);
-    p.setAttribute('stroke-width', '3');
-    p.setAttribute('fill', 'none');
-    p.setAttribute('stroke-linecap', 'round');
-    svg.appendChild(p);
+  // draw gates & vars, store renderer info
+  const rendermap = new Map();
+  for(const n of nodes){
+    const r = drawGate(svg, n);
+    rendermap.set(n, r);
+    // label var nodes use node.name already set uppercase
   }
 
-  function drawNode(n){
-    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('transform', `translate(${n._xpos},${n._ypos})`);
-    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x','-42'); rect.setAttribute('y','-22'); rect.setAttribute('width','84'); rect.setAttribute('height','44'); rect.setAttribute('rx','8');
-    rect.setAttribute('fill', '#ffffff'); rect.setAttribute('stroke','#e6eef6'); rect.setAttribute('stroke-width','1');
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x','0'); text.setAttribute('y','6'); text.setAttribute('text-anchor','middle'); text.setAttribute('font-size','13'); text.setAttribute('fill','#0f1724');
-    let label = n.kind;
-    if(n.kind === 'VAR') label = n.name;
-    if(n.kind === 'NOT') label = 'NOT';
-    text.textContent = label;
-    g.appendChild(rect); g.appendChild(text);
-    svg.appendChild(g);
-    return {g, rect};
-  }
-
-  const map = new Map();
-  for(const n of nodes) map.set(n, drawNode(n));
-
-  function drawConn(n){
+  // draw connections from child to parent with signal color
+  function connect(n){
     if(n.kind === 'VAR') return;
     if(n.kind === 'NOT'){
-      const A = n.child;
-      const val = evaluate(A, assign);
-      path(A._xpos + 42, A._ypos, n._xpos - 42, n._ypos, val ? '#10b981' : '#ef4444');
-      return drawConn(A);
+      const child = n.child;
+      const rc = rendermap.get(child);
+      const rn = rendermap.get(n);
+      const val = evaluate(child, assign);
+      // from child outX to not inLeft or directly to triangle base
+      const x1 = rc.outX || (child._xpos + 28);
+      const y1 = child._ypos;
+      const x2 = rn.inLeft || (n._xpos - 20);
+      const y2 = n._ypos;
+      drawWire(svg, x1, y1, x2, y2, val);
+      connect(child);
+      return;
     }
     const L = n.left, R = n.right;
+    const rL = rendermap.get(L), rR = rendermap.get(R), rN = rendermap.get(n);
     const vL = evaluate(L, assign), vR = evaluate(R, assign);
-    path(L._xpos + 42, L._ypos, n._xpos - 42, n._ypos, vL ? '#10b981' : '#ef4444');
-    path(R._xpos + 42, R._ypos, n._xpos - 42, n._ypos, vR ? '#10b981' : '#ef4444');
-    drawConn(L); drawConn(R);
+    const x1L = rL.outX || (L._xpos + 28);
+    const y1L = L._ypos;
+    const x1R = rR.outX || (R._xpos + 28);
+    const y1R = R._ypos;
+    const x2 = rN.inLeft || (n._xpos - 20);
+    const y2 = n._ypos;
+    // place L wire slightly above center and R below for clarity
+    drawWire(svg, x1L, y1L, x2, y2 - 8, vL);
+    drawWire(svg, x1R, y1R, x2, y2 + 8, vR);
+    connect(L); connect(R);
   }
+  connect(root);
 
-  drawConn(root);
-
-  // color nodes by their outputs
+  // color gates based on their output
   for(const n of nodes){
-    const el = map.get(n);
+    const r = rendermap.get(n);
     const outv = evaluate(n, assign);
-    el.rect.setAttribute('fill', outv ? '#ecfffa' : '#ffffff');
-    el.rect.setAttribute('stroke', outv ? '#bbf7d0' : '#e6eef6');
+    // Find a rect or path inside r.el to color background stroke/fill
+    const rect = r.el.querySelector ? r.el.querySelector('rect') : null;
+    if(rect){
+      rect.setAttribute('fill', outv ? '#ecfffa' : '#ffffff');
+      rect.setAttribute('stroke', outv ? '#bbf7d0' : '#e6eef6');
+    } else {
+      // for complex shapes (paths), just adjust fill/stroke
+      const paths = r.el.querySelectorAll ? r.el.querySelectorAll('path, circle') : [];
+      paths.forEach(p => {
+        // skip arc lines (stroke-only) by checking fill
+        if(p.hasAttribute('fill')) p.setAttribute('fill', outv ? '#ecfffa' : '#ffffff');
+        p.setAttribute('stroke', outv ? '#bbf7d0' : '#e6eef6');
+      });
+    }
   }
 }
 
-// ------------- UI glue -------------
+// ----------------- UI glue -----------------
 const exprInput = document.getElementById('expr');
 const parseBtn = document.getElementById('parseBtn');
 const applyBtn = document.getElementById('applyBtn');
@@ -289,49 +428,47 @@ let currentAST = null;
 let currentVars = [];
 
 // show status
-function setStatus(msg, ok=true){
+function setStatus(msg, ok = true){
   statusEl.textContent = msg;
-  statusEl.className = 'small ' + (ok? 'ok' : 'error');
+  statusEl.className = 'small ' + (ok ? 'ok' : 'error');
 }
 
-// build input fields for each variable (text fields expecting 0 or 1)
+// create variable input boxes (text fields expecting 0 or 1)
 function buildInputs(vars){
   inputsArea.innerHTML = '';
   if(vars.length === 0) return;
-  const wrapper = document.createElement('div'); wrapper.className = 'vars-grid';
+  const wrap = document.createElement('div'); wrap.className = 'inputs-grid';
   vars.forEach(v => {
-    const box = document.createElement('div'); box.className = 'var-box';
+    const box = document.createElement('div'); box.className = 'input-box';
     const lbl = document.createElement('label'); lbl.textContent = v;
     const input = document.createElement('input'); input.type = 'text'; input.value = '0';
-    input.style.width = '48px';
-    input.id = 'in_' + v;
+    input.style.width = '44px';
+    input.id = 'IN_' + v; // use uppercase key
     box.appendChild(lbl); box.appendChild(input);
-    wrapper.appendChild(box);
+    wrap.appendChild(box);
   });
-  inputsArea.appendChild(wrapper);
+  inputsArea.appendChild(wrap);
 }
 
-// read inputs and build assign map; returns {ok, assign, err}
+// read inputs and return assign map
 function readInputs(){
   const assign = {};
   for(const v of currentVars){
-    const el = document.getElementById('in_' + v);
-    if(!el) { assign[v] = false; continue; }
+    const el = document.getElementById('IN_' + v);
+    if(!el){ assign[v] = false; continue; }
     const val = el.value.trim();
-    if(!(val === '0' || val === '1')){
-      return {ok:false, err: `Invalid value for ${v}: use 0 or 1`};
-    }
+    if(!(val === '0' || val === '1')) return {ok:false, err:`Invalid value for ${v}: use 0 or 1`};
     assign[v] = (val === '1');
   }
   return {ok:true, assign};
 }
 
-// create truth table (full) for reference
+// build truth table
 function buildTruthTable(ast){
-  if(!ast) { tableWrap.innerHTML = ''; return; }
+  if(!ast){ tableWrap.innerHTML = ''; return; }
   const vars = currentVars;
   const n = vars.length;
-  if(n > 12) { tableWrap.innerHTML = '<div class="small">Too many variables to show full truth table (limit 12)</div>'; return; }
+  if(n > 12){ tableWrap.innerHTML = '<div class="small">Too many variables to show full truth table (limit 12)</div>'; return; }
   const total = 1 << n;
   const tbl = document.createElement('table');
   const thead = document.createElement('thead'); const thr = document.createElement('tr');
@@ -349,15 +486,13 @@ function buildTruthTable(ast){
     }
     const outv = evaluate(ast, assign);
     const tdOut = document.createElement('td'); tdOut.textContent = outv ? '1' : '0';
-    tr.appendChild(tdOut);
-    tbody.appendChild(tr);
+    tr.appendChild(tdOut); tbody.appendChild(tr);
   }
-  tbl.appendChild(tbody);
-  tableWrap.innerHTML = ''; tableWrap.appendChild(tbl);
+  tbl.appendChild(tbody); tableWrap.innerHTML = ''; tableWrap.appendChild(tbl);
 }
 
-// parse button handler
-parseBtn.addEventListener('click', () => {
+// parse handler
+parseBtn.addEventListener('click', ()=>{
   const expr = exprInput.value;
   try{
     const ast = parseExpression(expr);
@@ -365,7 +500,7 @@ parseBtn.addEventListener('click', () => {
     const s = new Set(); collectVars(ast, s);
     currentVars = Array.from(s).sort();
     buildInputs(currentVars);
-    // default assign: all zeros
+    // default assign all zeros
     const defaultAssign = {};
     currentVars.forEach(v => defaultAssign[v] = false);
     drawCircuit(svg, currentAST, defaultAssign);
@@ -381,8 +516,8 @@ parseBtn.addEventListener('click', () => {
   }
 });
 
-// apply inputs handler: read text inputs, update drawing and show output
-applyBtn.addEventListener('click', () => {
+// apply handler
+applyBtn.addEventListener('click', ()=>{
   if(!currentAST){ setStatus('Parse an expression first', false); return; }
   const r = readInputs();
   if(!r.ok){ setStatus(r.err, false); return; }
@@ -394,12 +529,11 @@ applyBtn.addEventListener('click', () => {
   outputBadge.style.color = outv ? '#064e3b' : '#0f1724';
 });
 
-// Enter key parses
-exprInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') parseBtn.click(); });
+// enter parses
+exprInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter') parseBtn.click(); });
 
-// auto-parse at load
-window.addEventListener('load', () => { parseBtn.click(); });
-
+// auto-parse on load
+window.addEventListener('load', ()=>{ parseBtn.click(); });
 </script>
 </body>
 </html>
