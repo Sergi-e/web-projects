@@ -1,33 +1,35 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Logic Circuit Simulator (Logisim style, ≤3 inputs)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Logic Circuit Simulator — Clean Straight Wires</title>
 <style>
 :root{
-  --bg:#f7fafc; --card:#ffffff; --fg:#0f1724; --muted:#475569;
-  --border:#e6eef6; --good:#10b981; --bad:#ef4444; --wireOn:red; --wireOff:blue;
+  --bg:#f7fafc; --card:#ffffff; --fg:#0f1724; --muted:#475569; --border:#e6eef6;
+  --wireTrue:#ef4444;    /* true = red */
+  --wireFalse:#2563eb;   /* false = blue */
+  --gateFill:#ffffff; --gateStroke:#111827;
 }
-body.dark{ --bg:#0d1117; --card:#0f1720; --fg:#e6eef3; --border:#263238; }
-body{ margin:0; background:var(--bg); color:var(--fg); font-family:Inter,system-ui,Arial; padding:18px; display:flex; justify-content:center; }
+body.dark{ --bg:#0b1220; --card:#0f1720; --fg:#e6edf3; --muted:#94a3b8; --border:#263238; }
+body{ margin:0; font-family:Inter,system-ui,Arial; background:var(--bg); color:var(--fg); padding:18px; display:flex; justify-content:center;}
 .app{ width:98%; max-width:1280px; }
 .card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px; }
-.header-row{ display:flex; align-items:center; justify-content:space-between; }
+.header-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .controls{ display:flex; gap:8px; align-items:center; margin-top:10px; }
-input[type="text"]{ padding:8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--fg); }
+input[type="text"]{ padding:8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--fg); width:100%; }
 button{ background:#0b7285; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
-button.secondary{ background:#94a3b8; color:white; }
+button.secondary{ background:#94a3b8; }
 .small{ font-size:13px; color:var(--muted); }
 .inputsGrid{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 .inputBox{ display:flex; gap:8px; align-items:center; background:var(--card); border:1px solid var(--border); padding:8px; border-radius:8px; }
-#svgwrap{ height:520px; overflow:auto; border:1px solid var(--border); border-radius:8px; background:var(--card); margin-left:12px; }
+#svgwrap{ height:580px; overflow:auto; border:1px solid var(--border); border-radius:8px; background:var(--card); }
 .row{ display:flex; gap:12px; align-items:flex-start; }
 .result{ display:inline-block; padding:6px 10px; border-radius:8px; border:1px solid var(--border); margin-left:8px; font-weight:700; background:var(--card); }
 table{ width:100%; border-collapse:collapse; margin-top:10px; }
 th,td{ border:1px solid var(--border); padding:8px; text-align:center; font-size:14px; }
 .modeBtn{ background:#0b7285; color:#fff; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; }
-svg{ width:1200px; height:1200px; }
+svg{ width:1200px; height:1200px; display:block; }
 </style>
 </head>
 <body>
@@ -35,21 +37,21 @@ svg{ width:1200px; height:1200px; }
   <div class="card header-row">
     <div>
       <h2 style="margin:0">Logic Circuit Simulator</h2>
-      <div class="small">Logisim-like gates, inputs left, outputs right — gates up to 3 inputs each.</div>
+      <div class="small">Aligned layout, Logisim-style gates, clean straight-only wires (minimal routing).</div>
     </div>
     <div>
       <button id="modeBtn" class="modeBtn">Dark mode</button>
     </div>
   </div>
 
-  <section class="card row" style="align-items:flex-start">
+  <section class="card row">
     <div style="flex:1; min-width:360px;">
       <label class="small">Expression</label>
-      <input id="expr" type="text" value="(A and B) or C" />
+      <input id="expr" type="text" value="(P and Q) or R" />
       <div class="controls">
-        <button id="parseBtn">Parse and draw</button>
+        <button id="parseBtn">Parse & draw</button>
         <button id="applyBtn" class="secondary">Apply inputs</button>
-        <span id="status" class="small" style="margin-left:8px"></span>
+        <div id="status" class="small" style="margin-left:8px"></div>
       </div>
 
       <div id="inputsArea" class="inputsGrid"></div>
@@ -60,7 +62,7 @@ svg{ width:1200px; height:1200px; }
     </div>
 
     <div id="svgwrap" class="card" style="flex:1; padding:10px;">
-      <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1200" preserveAspectRatio="xMinYMin meet"></svg>
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMinYMin meet"></svg>
     </div>
   </section>
 
@@ -71,7 +73,7 @@ svg{ width:1200px; height:1200px; }
 </div>
 
 <script>
-/* ---------- Parser, normalization ---------- */
+// ---------------- Parser & AST (same as before) ----------------
 function normalizeWords(s){
   return s.replace(/\bAND\b/gi,'&')
           .replace(/\bOR\b/gi,'|')
@@ -83,37 +85,31 @@ function normalizeWords(s){
 function tokenize(s){
   if(!s) return [];
   s = normalizeWords(s);
-  const re = /\s*([A-Za-z][A-Za-z0-9_]*|<->|->|\(|\)|~|!|&|\||\^|¬|∧|∨)\s*/g;
-  const out=[]; let m;
+  const re = /\s*([A-Za-z][A-Za-z0-9_]*|<->|->|\(|\)|~|!|&|\||\^|∧|∨|¬)\s*/g;
+  const tokens=[]; let m;
   while((m=re.exec(s))!==null){
-    const tk = m[1];
-    if(/^[A-Za-z]/.test(tk)) out.push(tk.toUpperCase());
-    else out.push(tk);
+    const tk=m[1];
+    if(/^[A-Za-z]/.test(tk)) tokens.push(tk.toUpperCase());
+    else tokens.push(tk);
   }
-  return out;
+  return tokens;
 }
 const prec = {'!':5,'~':5,'&':4,'^':3,'|':2,'->':1,'<->':0};
 function toPostfix(tokens){
-  const out=[], ops=[];
-  const isU = t=>t==='!'||t==='~';
-  for(const t0 of tokens){
-    let t=t0;
-    if(/^[A-Z]/.test(t)) out.push({type:'var', val:t});
-    else if(isU(t)) ops.push(t);
+  const out=[], ops=[]; const isUnary = t=>t==='!'||t==='~';
+  for(let t of tokens){
+    if(/^[A-Z]/.test(t)) out.push({type:'var',val:t});
+    else if(isUnary(t)) ops.push(t);
     else if(t==='(') ops.push(t);
     else if(t===')'){ while(ops.length && ops.at(-1)!=='(') out.push({type:'op', val:ops.pop()}); ops.pop(); }
-    else {
-      if(t==='¬') t='!'; if(t==='∧') t='&'; if(t==='∨') t='|';
-      while(ops.length && ops.at(-1)!=='(' && (prec[ops.at(-1)] >= (prec[t]||0))) out.push({type:'op', val:ops.pop()});
-      ops.push(t);
-    }
+    else { if(t==='∧') t='&'; if(t==='∨') t='|'; if(t==='¬') t='!'; while(ops.length && ops.at(-1)!=='(' && (prec[ops.at(-1)] >= (prec[t]||0))) out.push({type:'op', val:ops.pop()}); ops.push(t); }
   }
   while(ops.length) out.push({type:'op', val:ops.pop()});
   return out;
 }
-function postfixToAST(pf){
+function postfixToAST(postfix){
   const st=[];
-  for(const tk of pf){
+  for(const tk of postfix){
     if(tk.type==='var') st.push({kind:'VAR', name:tk.val});
     else {
       const op=tk.val;
@@ -125,340 +121,360 @@ function postfixToAST(pf){
   return st[0];
 }
 function desugar(node){
-  if(!node) return node;
+  if(!node) return null;
   if(node.kind==='VAR') return node;
   if(node.kind==='NOT') return {kind:'NOT', child: desugar(node.child)};
   const L=desugar(node.left), R=desugar(node.right);
   if(node.kind==='->') return {kind:'OR', left:{kind:'NOT', child:L}, right:R};
-  if(node.kind==='<->') return { kind:'OR', left:{kind:'AND', left:L, right:R}, right:{kind:'AND', left:{kind:'NOT',child:L}, right:{kind:'NOT',child:R}} };
-  return {kind:node.kind, left:L, right:R};
+  if(node.kind==='<->') return {kind:'OR', left:{kind:'AND', left:L, right:R}, right:{kind:'AND', left:{kind:'NOT', child:L}, right:{kind:'NOT', child:R}}};
+  return {kind: node.kind, left:L, right:R};
 }
-function parseExpression(s){
-  if(!s||!s.trim()) throw 'Empty expression';
-  const tokens = tokenize(s);
-  if(!tokens.length) throw 'No tokens found';
-  const pf = toPostfix(tokens);
-  const ast0 = postfixToAST(pf);
-  return desugar(ast0);
-}
+function parseExpression(s){ if(!s||!s.trim()) throw 'Empty expression'; const tokens=tokenize(s); if(!tokens.length) throw 'No tokens'; const pf=toPostfix(tokens); const ast0=postfixToAST(pf); return desugar(ast0); }
 
-/* ---------- convert binary AST to n-ary up to 3-input gates ---------- */
+// ---------------- Flatten to n-ary & collect vars ----------------
+const MAX_INPUTS = 3;
 function flattenToNAry(node){
   if(!node) return node;
   if(node.kind==='VAR') return node;
   if(node.kind==='NOT') return {kind:'NOT', child: flattenToNAry(node.child)};
-  // For AND, OR, XOR: flatten chains of the same operator into an inputs array, up to 3 per gate.
   if(node.kind==='AND' || node.kind==='OR' || node.kind==='XOR'){
     const kind=node.kind;
-    const collect = (n, acc) => {
+    const collect=(n,acc)=>{
       if(!n) return;
-      if(n.kind===kind){
-        // recurse into left and right
-        collect(n.left, acc);
-        collect(n.right, acc);
-      } else acc.push(flattenToNAry(n));
+      if(n.kind===kind){ collect(n.left,acc); collect(n.right,acc); } else acc.push(flattenToNAry(n));
     };
-    const acc=[]; collect(node, acc);
-    // create chain of gates each with up to 3 inputs
-    // if acc.length <=3 return {kind, inputs:acc}
-    if(acc.length <=3) return {kind:kind, inputs: acc.map(x=>flattenToNAry(x))};
-    // else build left-associative chain of gates each 3-input
-    // e.g. A B C D E => gate1(inputs A,B,C) => gate2(inputs gate1, D, E) => ...
-    let idx=0;
-    const makeGate = (leftover) => {
-      if(leftover.length <=3) return {kind:kind, inputs: leftover.map(x=>flattenToNAry(x))};
-      const first = leftover.slice(0,3);
-      const rest = leftover.slice(3);
-      const g = {kind:kind, inputs: first.map(x=>flattenToNAry(x))};
-      // then push g into rest front
-      return makeGate([g].concat(rest));
-    };
-    return makeGate(acc);
+    const arr=[]; collect(node,arr);
+    if(arr.length<=MAX_INPUTS) return {kind:kind, inputs:arr};
+    let working=arr.slice();
+    while(working.length>MAX_INPUTS){ const group=working.splice(0,MAX_INPUTS); const g={kind:kind, inputs:group}; working.unshift(g); }
+    return {kind:kind, inputs:working};
   }
-  // binary other kinds
   return {kind:node.kind, left: flattenToNAry(node.left), right: flattenToNAry(node.right)};
 }
+function collectVars(node,set){ if(!node) return; if(node.kind==='VAR'){ set.add(node.name); return; } if(node.kind==='NOT'){ collectVars(node.child,set); return; } if(node.inputs){ node.inputs.forEach(i=>collectVars(i,set)); return; } if(node.left) collectVars(node.left,set); if(node.right) collectVars(node.right,set); }
 
-/* ---------- evaluation for n-ary nodes ---------- */
+// ---------------- Evaluate ----------------
 function evaluate(node, assign){
   if(!node) return false;
   if(node.kind==='VAR') return !!assign[node.name];
   if(node.kind==='NOT') return !evaluate(node.child, assign);
-  if(node.kind==='AND'){ // n-ary or binary
-    if(node.inputs) return node.inputs.reduce((a,c)=>a && evaluate(c,assign), true);
-    return evaluate(node.left,assign) && evaluate(node.right,assign);
-  }
-  if(node.kind==='OR'){
-    if(node.inputs) return node.inputs.reduce((a,c)=>a || evaluate(c,assign), false);
-    return evaluate(node.left,assign) || evaluate(node.right,assign);
-  }
-  if(node.kind==='XOR'){
-    if(node.inputs){
-      // XOR of many: parity
-      const parity = node.inputs.reduce((p,c)=> p ^ (evaluate(c,assign)?1:0), 0);
-      return !!parity;
-    }
-    return !!(evaluate(node.left,assign) ^ evaluate(node.right,assign));
-  }
+  if(node.kind==='AND'){ if(node.inputs) return node.inputs.reduce((a,c)=>a && evaluate(c,assign), true); return evaluate(node.left,assign) && evaluate(node.right,assign); }
+  if(node.kind==='OR'){ if(node.inputs) return node.inputs.reduce((a,c)=>a || evaluate(c,assign), false); return evaluate(node.left,assign) || evaluate(node.right,assign); }
+  if(node.kind==='XOR'){ if(node.inputs){ const p=node.inputs.reduce((acc,c)=> acc ^ (evaluate(c,assign)?1:0),0); return !!p; } return !!(evaluate(node.left,assign) ^ evaluate(node.right,assign)); }
   return false;
 }
-function collectVars(node, set){
-  if(!node) return;
-  if(node.kind==='VAR') set.add(node.name);
-  if(node.kind==='NOT') collectVars(node.child, set);
-  if(node.inputs) { node.inputs.forEach(i=>collectVars(i,set)); return; }
-  if(node.left) collectVars(node.left, set);
-  if(node.right) collectVars(node.right, set);
-}
 
-/* ---------- layout ---------- */
-function layoutTree(root){
-  // simple depth and inorder for vertical placement (left=inputs, right=output)
-  const nodes=[];
-  function dfs(n,depth){ if(!n)return; n._depth=depth; nodes.push(n); if(n.kind==='NOT') dfs(n.child, depth+1); else if(n.inputs) { n.inputs.forEach(i=>dfs(i, depth+1)); } else if(n.left){ dfs(n.left, depth+1); dfs(n.right, depth+1); } }
-  dfs(root, 0);
-  let y=0;
-  function inorder(n){
-    if(!n) return;
-    if(n.kind==='VAR'){ n._y = y++; return; }
-    if(n.kind==='NOT'){ inorder(n.child); n._y = y++; return; }
-    if(n.inputs){
-      n.inputs.forEach(inp=>inorder(inp));
-      n._y = y++;
-      return;
-    }
-    inorder(n.left); inorder(n.right); n._y = y++;
+// ---------------- Aligned layout ----------------
+function computeDepths(root){
+  if(!root) return;
+  function annotate(n){
+    if(!n) return -Infinity;
+    if(n.kind==='VAR'){ n._depth=0; return 0; }
+    if(n.kind==='NOT'){ const d=1+annotate(n.child); n._depth=d; return d; }
+    if(n.inputs){ const ds=n.inputs.map(i=>annotate(i)); const d=1+Math.max(...ds); n._depth=d; return d; }
+    const dl=annotate(n.left), dr=annotate(n.right); const d=1+Math.max(dl,dr); n._depth=d; return d;
   }
-  inorder(root);
-  nodes.forEach(n=>{ n._x = n._depth; n._xpos = 120 + n._x * 260; n._ypos = 60 + n._y * 90; });
+  annotate(root);
+}
+function layoutAligned(root, svgW=1200, svgH=900, leftMargin=120, layerSpacing=220){
+  if(!root) return [];
+  computeDepths(root);
+  const buckets=new Map(); const nodes=[];
+  function collect(n){ if(!n) return; nodes.push(n); if(n.kind==='NOT') collect(n.child); else if(n.inputs) n.inputs.forEach(collect); else { collect(n.left); collect(n.right); } }
+  collect(root);
+  nodes.forEach(n=>{ const d=n._depth; if(!buckets.has(d)) buckets.set(d,[]); buckets.get(d).push(n); });
+  const depths=Array.from(buckets.keys()).sort((a,b)=>a-b);
+  const positions={}; depths.forEach((d,i)=> positions[d]=leftMargin + i*layerSpacing);
+  const pad=60;
+  depths.forEach(d=>{
+    const items=buckets.get(d);
+    const count=items.length;
+    const avail=svgH - pad*2;
+    items.sort((a,b)=> (a.kind==='VAR' && b.kind!=='VAR') ? -1 : 0);
+    items.forEach((n,idx)=>{
+      const yy = pad + (avail * (idx + 0.5) / count);
+      n._xpos = positions[d];
+      n._ypos = yy;
+      n._x = d; n._y = idx;
+    });
+  });
   return nodes;
 }
 
-/* ---------- Logisim-like gate drawing (inputs on left, output right), wires right-angle ---------- */
-const GATE_STROKE="black", GATE_FILL="white", GATE_W=2;
-function drawAND(svg, x,y){
-  const w=88,h=46; const left=x-w/2, top=y-h/2; const r=h/2;
-  const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+// ---------------- Gate drawing ----------------
+const GATE_STROKE="var(--gateStroke)"; const GATE_FILL="var(--gateFill)"; const GATE_W=1.6;
+function drawAND(svg,x,y,height=48){
+  const w=64,h=height,left=x-w/2,top=y-h/2,r=h/2;
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
   const d=`M ${left} ${top} L ${left + w/2} ${top} A ${r} ${r} 0 0 1 ${left + w/2} ${top + h} L ${left} ${top + h} Z`;
-  p.setAttribute("d",d); p.setAttribute("fill",GATE_FILL); p.setAttribute("stroke",GATE_STROKE); p.setAttribute("stroke-width",GATE_W);
-  svg.appendChild(p);
-  return {el:p, inLeft: left, inRight:left + 18, outX:left + w/2 + 6};
+  path.setAttribute('d',d); path.setAttribute('fill',GATE_FILL); path.setAttribute('stroke',GATE_STROKE); path.setAttribute('stroke-width',GATE_W);
+  svg.appendChild(path);
+  return {el:path, inLeft:left, outX:left + w/2 + 6, width:w, height:h};
 }
-function drawOR(svg,x,y){
-  // smoother OR with back curve
-  const w=110,h=60; const left=x-w/2, top=y-h/2; const back=left-20;
-  const p=document.createElementNS("http://www.w3.org/2000/svg","path");
-  const d=`M ${back} ${top}
-           C ${left+6} ${top} ${left + (w*0.25)} ${top} ${left + (w*0.5)} ${top}
-           C ${left + (w*0.9)} ${top} ${left + w} ${top + h*0.25} ${left + w} ${top + h/2}
-           C ${left + w} ${top + h*0.75} ${left + (w*0.9)} ${top + h} ${left + (w*0.5)} ${top + h}
-           C ${left + (w*0.25)} ${top + h} ${left+6} ${top + h} ${back} ${top + h}
-           C ${left + 14} ${top + h/2} ${left + 14} ${top + h/2} ${back} ${top}
-           Z`;
-  p.setAttribute("d", d); p.setAttribute("fill",GATE_FILL); p.setAttribute("stroke",GATE_STROKE); p.setAttribute("stroke-width",GATE_W);
-  svg.appendChild(p);
-  return {el:p, inLeft: left-6, outX: left + w*0.55};
+function drawOR(svg,x,y,height=56){
+  const w=84,h=height,left=x-w/2,top=y-h/2,back=left-12;
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d=`M ${back} ${top} C ${left+6} ${top} ${left + w*0.25} ${top} ${left + w*0.5} ${top} C ${left + w*0.85} ${top} ${left + w} ${top + h*0.25} ${left + w} ${top + h/2} C ${left + w} ${top + h*0.75} ${left + w*0.85} ${top + h} ${left + w*0.5} ${top + h} C ${left + w*0.25} ${top + h} ${left+6} ${top + h} ${back} ${top + h} C ${left + 10} ${top + h/2} ${left + 10} ${top + h/2} ${back} ${top} Z`;
+  path.setAttribute('d',d); path.setAttribute('fill',GATE_FILL); path.setAttribute('stroke',GATE_STROKE); path.setAttribute('stroke-width',GATE_W);
+  svg.appendChild(path);
+  return {el:path, inLeft:back, outX:left + w*0.55, width:w, height:h};
 }
-function drawXOR(svg,x,y){
-  // OR + front arc
-  const r = drawOR(svg,x,y);
-  const w=110,h=60; const left=x-w/2, top=y-h/2; const ax=left-14;
-  const arc=document.createElementNS("http://www.w3.org/2000/svg","path");
-  const ad=`M ${ax} ${top} C ${ax+10} ${top + h*0.12} ${ax+10} ${top + h*0.88} ${ax} ${top + h}`;
-  arc.setAttribute("d",ad); arc.setAttribute("fill","none"); arc.setAttribute("stroke",GATE_STROKE); arc.setAttribute("stroke-width",GATE_W);
+function drawXOR(svg,x,y,height=56){
+  const r=drawOR(svg,x,y,height); const w=84,h=height,left=x-w/2,top=y-h/2,ax=left-8;
+  const arc=document.createElementNS('http://www.w3.org/2000/svg','path');
+  arc.setAttribute('d',`M ${ax} ${top} C ${ax+10} ${top + h*0.12} ${ax+10} ${top + h*0.88} ${ax} ${top + h}`);
+  arc.setAttribute('fill','none'); arc.setAttribute('stroke',GATE_STROKE); arc.setAttribute('stroke-width',GATE_W);
   svg.appendChild(arc);
-  return {el:r.el, inLeft: ax - 6, outX: r.outX};
+  return {el:r.el, inLeft:ax - 6, outX:r.outX, width:r.width, height:r.height};
 }
-function drawNOT(svg,x,y){
-  const w=56,h=44; const left=x-w/2, top=y-h/2;
-  const tri=document.createElementNS("http://www.w3.org/2000/svg","path");
-  tri.setAttribute("d",`M ${left} ${top} L ${left + w} ${y} L ${left} ${top + h} Z`);
-  tri.setAttribute("fill",GATE_FILL); tri.setAttribute("stroke",GATE_STROKE); tri.setAttribute("stroke-width",GATE_W);
+function drawNOT(svg,x,y,height=40){
+  const w=46,h=height,left=x-w/2,top=y-h/2;
+  const tri=document.createElementNS('http://www.w3.org/2000/svg','path');
+  tri.setAttribute('d',`M ${left} ${top} L ${left + w} ${y} L ${left} ${top + h} Z`);
+  tri.setAttribute('fill',GATE_FILL); tri.setAttribute('stroke',GATE_STROKE); tri.setAttribute('stroke-width',GATE_W);
   svg.appendChild(tri);
-  const r=6; const cx=left + w + r + 2;
-  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  c.setAttribute("cx",cx); c.setAttribute("cy",y); c.setAttribute("r",r); c.setAttribute("fill",GATE_FILL); c.setAttribute("stroke",GATE_STROKE); c.setAttribute("stroke-width",GATE_W);
+  const r=5,cx=left + w + r + 2;
+  const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('cx',cx); c.setAttribute('cy',y); c.setAttribute('r',r); c.setAttribute('fill',GATE_FILL); c.setAttribute('stroke',GATE_STROKE); c.setAttribute('stroke-width',GATE_W);
   svg.appendChild(c);
-  return {el:tri, inLeft:left-6, outX:cx + r};
+  return {el:tri, inLeft:left - 6, outX: cx + r, width:w, height:h};
 }
 function drawVAR(svg,node){
-  const x=node._xpos, y=node._ypos;
-  const g=document.createElementNS("http://www.w3.org/2000/svg","g"); g.setAttribute("transform",`translate(${x},${y})`);
-  const rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
-  rect.setAttribute("x","-28"); rect.setAttribute("y","-16"); rect.setAttribute("width","56"); rect.setAttribute("height","32"); rect.setAttribute("rx","8");
-  rect.setAttribute("fill",GATE_FILL); rect.setAttribute("stroke",GATE_STROKE); rect.setAttribute("stroke-width","2");
-  const t=document.createElementNS("http://www.w3.org/2000/svg","text"); t.setAttribute("x","0"); t.setAttribute("y","6"); t.setAttribute("text-anchor","middle"); t.setAttribute("font-size","13"); t.textContent=node.name;
-  g.appendChild(rect); g.appendChild(t); svg.appendChild(g);
-  return {el:g, outX:x+28, pinX:x-40, pinY:y};
-}
-function drawWire(svg,x1,y1,x2,y2,val){
-  const midX=(x1+x2)/2;
-  const path=document.createElementNS("http://www.w3.org/2000/svg","path");
-  const d=`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
-  path.setAttribute("d",d); path.setAttribute("stroke", val? "var(--wireOn)":"var(--wireOff)"); path.setAttribute("stroke-width","3"); path.setAttribute("fill","none"); path.setAttribute("stroke-linecap","square");
-  svg.appendChild(path);
+  const x=node._xpos,y=node._ypos,w=56,h=32;
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('transform',`translate(${x},${y})`);
+  const rect=document.createElementNS('http://www.w3.org/2000/svg','rect'); rect.setAttribute('x',-w/2); rect.setAttribute('y',-h/2); rect.setAttribute('width',w); rect.setAttribute('height',h); rect.setAttribute('rx',8);
+  rect.setAttribute('fill',GATE_FILL); rect.setAttribute('stroke',GATE_STROKE); rect.setAttribute('stroke-width','1.6');
+  const label=document.createElementNS('http://www.w3.org/2000/svg','text'); label.setAttribute('x',0); label.setAttribute('y',4); label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','13'); label.textContent = node._display || node.name;
+  g.appendChild(rect); g.appendChild(label); svg.appendChild(g);
+  return {el:g, outX: x + w/2 + 6, pinX: x - w/2, pinY: y};
 }
 
-/* ---------- compose render with n-ary gates (≤3 inputs) ---------- */
+// ---------------- Straight-only minimal routing ----------------
+const LANDING = 20;   // shorter landing because we want minimal runs
+function drawStraightMinimal(svg, x1,y1, x2,y2, val){
+  // Straight-only path comprised of horizontal + vertical segments.
+  // If y is nearly equal, draw a single horizontal segment (minimal).
+  const stroke = val ? getComputedStyle(document.documentElement).getPropertyValue('--wireTrue') || '#ef4444' : getComputedStyle(document.documentElement).getPropertyValue('--wireFalse') || '#2563eb';
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  // if almost same Y -> single horizontal
+  if(Math.abs(y1 - y2) <= 6){
+    const d = `M ${x1} ${y1} L ${x2} ${y2}`;
+    path.setAttribute('d', d);
+    path.setAttribute('stroke', stroke); path.setAttribute('stroke-width','2.2'); path.setAttribute('fill','none'); svg.appendChild(path); return path;
+  }
+  // otherwise build short, minimal routing:
+  // 1) short horizontal from source (to approach)
+  // 2) vertical to target Y
+  // 3) short horizontal INTO gate final stub (LANDING)
+  // Determine final stub start (beforeFinalX)
+  const finalX = x2;
+  const beforeFinalX = finalX - LANDING;
+  // choose pivotX: prefer staying close to source but not past beforeFinalX
+  let pivotX = x1 + Math.max(12, Math.floor(LANDING * 0.6));
+  if(pivotX >= beforeFinalX) pivotX = Math.max(x1 + 8, beforeFinalX - 6);
+  // Compose path: x1,y1 -> pivotX,y1 -> pivotX,y2 -> beforeFinalX,y2 -> finalX,y2
+  const d = `M ${x1} ${y1} L ${pivotX} ${y1} L ${pivotX} ${y2} L ${beforeFinalX} ${y2} L ${finalX} ${y2}`;
+  path.setAttribute('d', d); path.setAttribute('stroke', stroke); path.setAttribute('stroke-width','2.2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linecap','square');
+  svg.appendChild(path);
+  return path;
+}
+
+// ---------------- Compose rendering ----------------
+function computeValues(node, assign){
+  if(!node) return false;
+  if(node.kind==='VAR'){ node._value = !!assign[node.name]; node._display = (assign && (assign[node.name] !== undefined)) ? (assign[node.name] ? '1' : '0') : node.name; return node._value; }
+  if(node.kind==='NOT'){ const v=!computeValues(node.child, assign); node._value=v; return v; }
+  if(node.inputs){ const vals = node.inputs.map(i=> computeValues(i,assign)?1:0); if(node.kind==='AND'){ node._value = vals.reduce((a,b)=>a & b,1)===1; return node._value; } if(node.kind==='OR'){ node._value = vals.reduce((a,b)=>a | b,0)===1; return node._value; } if(node.kind==='XOR'){ const p = vals.reduce((a,b)=> a ^ b,0); node._value = !!p; return node._value; } }
+  if(node.left || node.right){ const lv=computeValues(node.left,assign), rv=computeValues(node.right,assign); if(node.kind==='AND'){ node._value=lv && rv; return node._value; } if(node.kind==='OR'){ node._value = lv || rv; return node._value; } if(node.kind==='XOR'){ node._value = !!(lv ^ rv); return node._value; } }
+  node._value=false; return node._value;
+}
 function clearSVG(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
 
-function drawCircuit(svg, root, assign){
+function drawCircuit(root, assign){
+  const svg = document.getElementById('svg');
   clearSVG(svg);
   if(!root) return;
-  const nodes = layoutTree(root);
+  computeValues(root, assign);
+  const nodes = layoutAligned(root, 1200, 900, 120, 220);
   const map = new Map();
-  // draw nodes
-  for(const n of nodes){
+  nodes.forEach(n=>{
     if(n.kind==='VAR') map.set(n, drawVAR(svg,n));
-    else if(n.kind==='AND') map.set(n, drawAND(svg,n._xpos,n._ypos));
-    else if(n.kind==='OR') map.set(n, drawOR(svg,n._xpos,n._ypos));
-    else if(n.kind==='XOR') map.set(n, drawXOR(svg,n._xpos,n._ypos));
-    else if(n.kind==='NOT') map.set(n, drawNOT(svg,n._xpos,n._ypos));
+    else if(n.kind==='AND') map.set(n, drawAND(svg,n._xpos,n._ypos, Math.max(40, (n.inputs ? n.inputs.length*28 : 48)) ));
+    else if(n.kind==='OR') map.set(n, drawOR(svg,n._xpos,n._ypos, Math.max(44, (n.inputs ? n.inputs.length*28 : 56)) ));
+    else if(n.kind==='XOR') map.set(n, drawXOR(svg,n._xpos,n._ypos, Math.max(44, (n.inputs ? n.inputs.length*28 : 56)) ));
+    else if(n.kind==='NOT') map.set(n, drawNOT(svg,n._xpos,n._ypos, 40 ));
     else map.set(n, drawVAR(svg,n));
+  });
+
+  function getOutPoint(n){
+    const r = map.get(n);
+    if(!r) return {x:n._xpos, y:n._ypos};
+    const outX = r.outX || (n._xpos + 40);
+    return {x: outX, y: n._ypos};
   }
-  // draw connections; single output per gate always
+  function getInPoint(parent, index, total){
+    const r = map.get(parent);
+    const inX = (r && r.inLeft !== undefined) ? r.inLeft : (parent._xpos - 12);
+    let y2 = parent._ypos;
+    if(total === 1) y2 = parent._ypos;
+    else if(total === 2) y2 = parent._ypos + (index===0 ? -10 : 10);
+    else y2 = parent._ypos + (index-1)*12;
+    return {x: inX, y: y2};
+  }
+
+  // recursive connection (draw wires and small badges)
   function connect(n){
     if(n.kind==='VAR') return;
     if(n.kind==='NOT'){
-      const child = n.child;
-      const rc=map.get(child), rn=map.get(n);
-      const x1= rc.outX !== undefined ? rc.outX : (child._xpos + 28);
-      const y1= child._ypos;
-      const x2= rn.inLeft !== undefined ? rn.inLeft : (n._xpos - 12);
-      const y2= n._ypos;
-      drawWire(svg,x1,y1,x2,y2, evaluate(child,assign));
-      connect(child);
-      return;
+      const child=n.child;
+      const src=getOutPoint(child);
+      const dst=getInPoint(n,0,1);
+      const val = !!child._value;
+      drawStraightMinimal(svg, src.x, src.y, dst.x, dst.y, val);
+      addBadge(svg, dst.x - (LANDING - 6), dst.y - 11, val);
+      connect(child); return;
     }
-    // n-ary inputs
-    const ins = n.inputs ? n.inputs : [n.left, n.right];
-    // if <=3 inputs, space their y positions around gate center
-    const count = ins.length;
-    const spacing = 12;
-    for(let i=0;i<count;i++){
-      const inNode = ins[i];
-      const rc = map.get(inNode);
-      const x1 = rc.outX !== undefined ? rc.outX : (inNode._xpos + 28);
-      const y1 = inNode._ypos;
-      // compute target y offset
-      let y2 = n._ypos;
-      if(count===1) y2 = n._ypos;
-      else if(count===2) y2 = n._ypos + (i===0?-8:8);
-      else y2 = n._ypos + (i-1)*spacing; // three: -spacing, 0, +spacing
-      const x2 = (map.get(n).inLeft !== undefined) ? map.get(n).inLeft : (n._xpos - 12);
-      drawWire(svg, x1, y1, x2, y2, evaluate(inNode,assign));
+    const inputs = n.inputs ? n.inputs : (n.left ? [n.left, n.right] : []);
+    for(let i=0;i<inputs.length;i++){
+      const inNode = inputs[i];
+      const src = getOutPoint(inNode);
+      const dst = getInPoint(n,i,inputs.length);
+      const val = !!inNode._value;
+      drawStraightMinimal(svg, src.x, src.y, dst.x, dst.y, val);
+      addBadge(svg, dst.x - (LANDING - 6), dst.y - 11, val);
       connect(inNode);
     }
   }
   connect(root);
 
-  // color gates and var boxes by output
-  for(const n of nodes){
+  // final output
+  const outPt = getOutPoint(root);
+  const finalVal = !!root._value;
+  drawStraightMinimal(svg, outPt.x, outPt.y, outPt.x + 76, outPt.y, finalVal);
+  const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circ.setAttribute('cx', outPt.x + 86); circ.setAttribute('cy', outPt.y); circ.setAttribute('r',6);
+  circ.setAttribute('fill', finalVal ? getComputedStyle(document.documentElement).getPropertyValue('--wireTrue') || '#ef4444' : getComputedStyle(document.documentElement).getPropertyValue('--wireFalse') || '#2563eb');
+  circ.setAttribute('stroke','#000'); svg.appendChild(circ);
+  const tOut = document.createElementNS('http://www.w3.org/2000/svg','text');
+  tOut.setAttribute('x', outPt.x + 102); tOut.setAttribute('y', outPt.y + 4); tOut.setAttribute('font-size','13');
+  tOut.setAttribute('fill', finalVal ? (getComputedStyle(document.documentElement).getPropertyValue('--wireTrue') || '#ef4444') : (getComputedStyle(document.documentElement).getPropertyValue('--wireFalse') || '#2563eb'));
+  tOut.textContent = `OUT = ${finalVal ? '1' : '0'}`;
+  svg.appendChild(tOut);
+
+  // update var labels and gate output badges
+  nodes.forEach(n=>{
     const r = map.get(n);
-    const outv = evaluate(n, assign);
-    // color rectangles or paths if possible
+    const val = !!n._value;
     if(n.kind==='VAR'){
-      const rect = r.el.querySelector('rect');
-      if(rect){ rect.setAttribute('fill', outv ? '#ecfffa' : GATE_FILL); rect.setAttribute('stroke', outv ? '#bbf7d0' : GATE_STROKE); }
+      const txt = r.el.querySelector('text');
+      txt.textContent = n._display || n.name;
     } else {
-      // r.el might be a path element
-      if(r.el && r.el.tagName==='path'){
-        r.el.setAttribute('fill', outv ? '#ecfffa' : GATE_FILL);
-        r.el.setAttribute('stroke', outv ? '#bbf7d0' : GATE_STROKE);
-      }
+      if(r && r.el.tagName==='path'){ r.el.setAttribute('fill', GATE_FILL); r.el.setAttribute('stroke', GATE_STROKE); }
+      const badgeX = (r.outX || (n._xpos + 20)) + 8;
+      const badgeY = n._ypos - 12;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', badgeX); rect.setAttribute('y', badgeY); rect.setAttribute('rx',6);
+      rect.setAttribute('width', 42); rect.setAttribute('height', 20);
+      rect.setAttribute('fill', val ? (getComputedStyle(document.documentElement).getPropertyValue('--wireTrue') || '#ef4444') : (getComputedStyle(document.documentElement).getPropertyValue('--wireFalse') || '#2563eb'));
+      svg.appendChild(rect);
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', badgeX + 21); label.setAttribute('y', badgeY + 14); label.setAttribute('text-anchor','middle'); label.setAttribute('font-size','12'); label.setAttribute('fill','#fff');
+      label.textContent = val ? '1' : '0';
+      svg.appendChild(label);
     }
-  }
+  });
 }
 
-/* ---------- truth table generation ---------- */
+function addBadge(svg, bx,by, val){
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x', bx); rect.setAttribute('y', by); rect.setAttribute('rx',4);
+  rect.setAttribute('width', 20); rect.setAttribute('height', 18);
+  rect.setAttribute('fill', val ? (getComputedStyle(document.documentElement).getPropertyValue('--wireTrue') || '#ef4444') : (getComputedStyle(document.documentElement).getPropertyValue('--wireFalse') || '#2563eb'));
+  svg.appendChild(rect);
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', bx + 10); t.setAttribute('y', by + 13); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','12'); t.setAttribute('fill','#fff');
+  t.textContent = val ? '1' : '0';
+  svg.appendChild(t);
+}
+
+// ---------------- Truth table UI ----------------
 function buildTruthTable(ast){
   const wrap = document.getElementById('tableWrap');
   if(!ast){ wrap.innerHTML=''; return; }
   const s=new Set(); collectVars(ast,s);
-  const vars = Array.from(s).sort();
-  if(vars.length>12){ wrap.innerHTML='<div class="small">Too many variables to show truth table (limit 12)</div>'; return; }
-  const n=vars.length; const total=1<<n;
+  const vars=Array.from(s).sort();
+  if(vars.length>12){ wrap.innerHTML = '<div class="small">Too many variables to show (limit 12)</div>'; return; }
+  const n=vars.length, total=1<<n;
   const table=document.createElement('table');
   const thead=document.createElement('thead'); const thr=document.createElement('tr');
   vars.forEach(v=>{ const th=document.createElement('th'); th.textContent=v; thr.appendChild(th); });
-  const thO=document.createElement('th'); thO.textContent='OUT'; thr.appendChild(thO);
-  thead.appendChild(thr); table.appendChild(thead);
+  const tho=document.createElement('th'); tho.textContent='OUT'; thr.appendChild(tho); thead.appendChild(thr); table.appendChild(thead);
   const tbody=document.createElement('tbody');
   for(let i=0;i<total;i++){
     const tr=document.createElement('tr'); const assign={};
-    for(let j=0;j<n;j++){
-      const bit= !!((i >> (n-1-j)) & 1);
-      assign[vars[j]] = bit;
-      const td=document.createElement('td'); td.textContent = bit ? '1':'0'; tr.appendChild(td);
-    }
-    const outv = evaluate(ast, assign);
-    const tdout=document.createElement('td'); tdout.textContent = outv ? '1':'0'; tr.appendChild(tdout); tbody.appendChild(tr);
+    for(let j=0;j<n;j++){ const bit=!!((i>>(n-1-j))&1); assign[vars[j]] = bit; const td=document.createElement('td'); td.textContent = bit? '1':'0'; tr.appendChild(td); }
+    const outv = evaluate(ast, assign); const td=document.createElement('td'); td.textContent = outv? '1':'0'; tr.appendChild(td); tbody.appendChild(tr);
   }
   table.appendChild(tbody); wrap.innerHTML=''; wrap.appendChild(table);
 }
 
-/* ---------- UI glue ---------- */
-const exprInput = document.getElementById('expr');
-const parseBtn = document.getElementById('parseBtn');
-const applyBtn = document.getElementById('applyBtn');
-const statusEl = document.getElementById('status');
-const inputsArea = document.getElementById('inputsArea');
-const svg = document.getElementById('svg');
-const outputBadge = document.getElementById('outputBadge');
-const modeBtn = document.getElementById('modeBtn');
+// ---------------- UI glue ----------------
+const exprInput=document.getElementById('expr');
+const parseBtn=document.getElementById('parseBtn');
+const applyBtn=document.getElementById('applyBtn');
+const statusEl=document.getElementById('status');
+const inputsArea=document.getElementById('inputsArea');
+const outputBadge=document.getElementById('outputBadge');
+const modeBtn=document.getElementById('modeBtn');
 
-let currentAST = null;
-let currentVars = [];
+let currentAST=null, currentVars=[];
 
-function setStatus(msg, ok=true){ statusEl.textContent = msg; statusEl.style.color = ok ? 'var(--good)' : 'var(--bad)'; }
+function setStatus(msg, ok=true){ statusEl.textContent=msg; statusEl.style.color = ok ? '#10b981' : '#ef4444'; }
 
 function buildInputs(vars){
-  inputsArea.innerHTML = '';
-  currentVars = vars;
+  inputsArea.innerHTML=''; currentVars=vars;
   vars.forEach(v=>{
-    const box = document.createElement('div'); box.className='inputBox';
-    box.innerHTML = `<label style="font-weight:700">${v}</label><input id="IN_${v}" type="text" value="0" style="width:48px">`;
-    inputsArea.appendChild(box);
+    const div=document.createElement('div'); div.className='inputBox';
+    div.innerHTML = `<label style="font-weight:700">${v}</label><input id="IN_${v}" type="text" value="0" style="width:48px">`;
+    inputsArea.appendChild(div);
   });
 }
 
 function readInputs(){
-  const assign = {};
+  const assign={};
   for(const v of currentVars){
-    const el = document.getElementById('IN_'+v);
-    if(!el) { assign[v]=false; continue; }
-    const val = el.value.trim();
-    if(!(val==='0' || val==='1')) return {ok:false, err:`Invalid value for ${v}: must be 0 or 1`};
-    assign[v] = (val==='1');
+    const el=document.getElementById('IN_'+v);
+    if(!el){ assign[v]=false; continue; }
+    const val=el.value.trim();
+    if(val!=='0' && val!=='1') return {ok:false, err:`Invalid value for ${v}: must be 0 or 1`};
+    assign[v]= (val==='1');
   }
   return {ok:true, assign};
 }
 
 parseBtn.addEventListener('click', ()=>{
-  try {
+  try{
     const ast0 = parseExpression(exprInput.value);
     const ast = flattenToNAry(ast0);
     currentAST = ast;
-    const s=new Set(); collectVars(ast,s);
+    const s = new Set(); collectVars(ast,s);
     const vars = Array.from(s).sort();
     buildInputs(vars);
     const def = {}; vars.forEach(v=>def[v]=false);
-    drawCircuit(svg, ast, def);
+    drawCircuit(ast, def);
     buildTruthTable(ast);
-    outputBadge.textContent = '—';
-    setStatus('Parsed', true);
-  } catch(err) {
-    setStatus(String(err), false);
-    currentAST = null;
-    inputsArea.innerHTML=''; document.getElementById('tableWrap').innerHTML=''; svg.innerHTML='';
+    outputBadge.textContent='—';
+    setStatus('Parsed successfully', true);
+  } catch(e){
+    setStatus(String(e), false);
+    currentAST=null; inputsArea.innerHTML=''; document.getElementById('tableWrap').innerHTML=''; document.getElementById('svg').innerHTML='';
   }
 });
 
 applyBtn.addEventListener('click', ()=>{
   if(!currentAST){ setStatus('Parse expression first', false); return; }
-  const r = readInputs();
-  if(!r.ok){ setStatus(r.err, false); return; }
-  drawCircuit(svg, currentAST, r.assign);
+  const r = readInputs(); if(!r.ok){ setStatus(r.err, false); return; }
+  drawCircuit(currentAST, r.assign);
   const outv = evaluate(currentAST, r.assign);
   outputBadge.textContent = outv ? '1' : '0';
   setStatus('Inputs applied', true);
@@ -469,9 +485,8 @@ modeBtn.addEventListener('click', ()=>{
   modeBtn.textContent = document.body.classList.contains('dark') ? 'Light mode' : 'Dark mode';
 });
 
-// auto-parse default expression
+// initial parse
 parseBtn.click();
-
 </script>
 </body>
 </html>
