@@ -52,6 +52,10 @@ transition: background-color 0.3s ease;
 background-color: orangered;
 }
 
-card-links a:active{
+.card-links a:active{
   background-color: midnightblue;
+}
+
+.card-links a:focus{
+  outline: 2px solid yellow;
 }
