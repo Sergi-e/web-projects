@@ -2,5 +2,8 @@ body {
   font-family: Arial, sans-serif;
   padding: 40px;
   text-align: center;
+}
 
+.card{
+  background-color: white;
 }
