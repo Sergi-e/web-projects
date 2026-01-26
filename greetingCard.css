@@ -46,3 +46,7 @@ h1::after{
   color: white;
   background-color: midnightblue;
 }
+
+.card-links a:hover{
+background-color: orangered;
+}
