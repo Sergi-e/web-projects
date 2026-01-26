@@ -64,3 +64,11 @@ background-color: orangered;
   color: crimson;
 }
 
+section{
+  margin: 20px auto;
+  max-width: 600px;
+  background-color: whitesmoke;
+  padding: 20px;
+  border-radius: 10px;
+}
+
