@@ -59,3 +59,8 @@ background-color: orangered;
 .card-links a:focus{
   outline: 2px solid yellow;
 }
+
+.card-links a:visited{
+  color: crimson;
+}
+
