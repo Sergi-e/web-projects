@@ -27,3 +27,13 @@ h1::before{
 h1::after{
   content: " 🥳";
 }
+.message{
+  font-size: 1.2em;
+  margin-bottom: 20px;
+}
+
+.card-links{
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-around;
+}
