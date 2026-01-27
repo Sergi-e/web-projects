@@ -50,3 +50,7 @@ input, input::placeholder, textarea{
   color: whitesmoke;
 }
 
+.contact-method-radio-btn{
+  appearance: none;
+}
+
