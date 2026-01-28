@@ -4,7 +4,7 @@ body{
 }
 
 .container{
-    background-color: Darkblue;
+    background-color: rgb(13, 13, 80);
     width:80%;
     max-width: 600px;
     border-radius:10px;
@@ -12,6 +12,8 @@ body{
     padding: 10px 20px;
     box-shadow: 0 5px 15px black;
 }
+
+
 
 
 
