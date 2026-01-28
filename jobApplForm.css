@@ -3,6 +3,10 @@ body{
     color: whitesmoke;
 }
 
+h1{
+    color:aliceblue;
+    text-align: center;
+}
 .container{
     background-color: rgb(13, 13, 80);
     width:80%;
@@ -30,6 +34,7 @@ legend{
     color: azure;
     font-size: 1.2rem;
 }
+
 
 
 
