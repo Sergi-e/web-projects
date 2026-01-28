@@ -1,5 +1,5 @@
 body{
-    background-color: darkgray;
+    background-color: bisque
     color: whitesmoke;
 }
 
@@ -12,4 +12,16 @@ body{
     padding: 10px 20px;
     box-shadow: 0 5px 15px black;
 }
+
+label{
+    display: block;
+    color:azure;
+    font-size: 1.2rem;
+    margin:0 60px;
+
+}
+
+
+
+
 
