@@ -37,22 +37,24 @@
             
             <fieldset class="radio-group">
                 <legend>Availability</legend>
-                 <label for="Fulltime" class="availability">Full-Time</label>
-                    <input type="radio" 
-                        name="Full-time" 
-                        class="available"
-                        id="fulltime"
-                        value="fulltime"
-                        checked
-                    >
+                 <label class="contact-method" for="email">Email: </label>
+        <input
+            id="email"
+            class="contact-method-radio-btn"
+            type="radio"
+            name="contact-method"
+            value="email"
+            checked
+          />
 
-                <label for="Parttime" class="availability">Part-Time</label>
-                    <input type="radio"
-                        name="Part-Time"
-                        class="available"
-                        id="parttime"
-                        value="partt"
-                        >
+          <label class="contact-method" for="phone">Phone: </label>
+      <input
+            id="phone"
+            class="contact-method-radio-btn"
+            type="radio"
+            name="contact-method"
+            value="phone"
+          />
             </fieldset>
 
             <label for="text-area" id="text-area">
