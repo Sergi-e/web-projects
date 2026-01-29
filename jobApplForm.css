@@ -33,6 +33,11 @@ textarea {
   border: 1px solid gray;
 }
 
+input:first-of-type {
+  background-color: #f0f8ff;
+  border: 2px solid royalblue;
+}
+
 input:focus,
 textarea:focus {
   border-color: aquamarine;
@@ -49,11 +54,6 @@ input:valid,
 select:valid,
 textarea:valid {
   border-color: green;
-}
-
-.appform input:first-of-type {
-  background-color: #f0f8ff;
-  border-radius: 10px;
 }
 
 .radio-group {
@@ -80,7 +80,7 @@ textarea:valid {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.radio-group input[type="radio"]:checked + label {
+input[type="radio"]:checked + label {
   color: #4caf50;
   font-weight: bold;
 }
