@@ -4,7 +4,7 @@ body{
 }
 
 h1{
-    color:aliceblue;
+    color: whitesmoke;
     text-align: center;
 }
 .container{
@@ -31,13 +31,13 @@ fieldset legend{
 
 label:not(#availab-status){
     display: block;
-    color:azure;
+    color: whitesmoke;
     font-size: 1.2rem;
     margin: auto;
 }
 
 input:not(.availability), textarea{
-  background-color: aliceblue;
+  background-color: bisque;
   width: 95%;
   border: 1px solid gray;
   border-radius: 5px;
