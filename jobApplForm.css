@@ -36,16 +36,8 @@ label:not(#availability){
     margin:0 60px;
 }
 
-#availability{
-    color: azure;
-    font-size: 1.2rem;
-    margin: 0 60px;
-}
 
-legend{
-    color: azure;
-    font-size: 1.2rem;
-}
+
 
 
 
