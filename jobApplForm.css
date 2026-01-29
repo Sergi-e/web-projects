@@ -36,6 +36,14 @@ label:not(#availability){
     margin:0 60px;
 }
 
+input:not(.), textarea{
+  background-color: #ffffff1a;
+  width: 95%;
+  border: 1px solid gray;
+  border-radius: 5px;
+  padding: 10px;
+}
+
 
 
 
