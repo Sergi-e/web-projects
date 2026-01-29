@@ -94,6 +94,11 @@ input, select, textarea:invalid{
     border-color: red;
 }
 
+input, select, textarea:valid{
+    border-color: green;
+}
+
+
 
 
 
