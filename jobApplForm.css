@@ -108,6 +108,13 @@ input[type="radio"]:checked{
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+input[type="radio"]:checked + label {
+  color: #4caf50; 
+  font-weight: bold;
+}
+
+
+
 
 
 
