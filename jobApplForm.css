@@ -33,10 +33,10 @@ label:not(#availability){
     display: block;
     color:azure;
     font-size: 1.2rem;
-    margin:0 60px;
+    margin: auto;
 }
 
-input:not(availability), textarea{
+input:not(.availability), textarea{
   background-color: aliceblue;
   width: 95%;
   border: 1px solid gray;
