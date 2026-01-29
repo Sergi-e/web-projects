@@ -113,6 +113,12 @@ input[type="radio"]:checked + label {
   font-weight: bold;
 }
 
+.appform input:first-of-type {
+  border-radius: 10px;
+  background-color: #f0f8ff;
+}
+
+
 
 
 
