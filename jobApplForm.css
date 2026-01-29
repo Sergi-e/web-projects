@@ -36,7 +36,7 @@ label:not(#availability){
     margin:0 60px;
 }
 
-input:not(#name, #email), textarea{
+input:not(availability), textarea{
   background-color: aliceblue;
   width: 95%;
   border: 1px solid gray;
@@ -44,7 +44,7 @@ input:not(#name, #email), textarea{
   padding: 10px;
 }
 
-.radio-btn {
+.available {
   appearance: none;
   width: 20px;
   height: 20px;
@@ -53,7 +53,7 @@ input:not(#name, #email), textarea{
   vertical-align: bottom;
 }
 
-.radio-btn::before{
+.available::before{
   display: block;
   content: " ";
   width: 10px;
@@ -63,7 +63,7 @@ input:not(#name, #email), textarea{
   transition: all 0.3s ease-in;
 }
 
-.radio-btn:checked::before {
+.available::before {
   transform: translate(3px, 3px) scale(1);
   background-color: lightgreen;
 }
