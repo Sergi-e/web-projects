@@ -50,7 +50,6 @@ input:not(.availability), textarea{
   height: 20px;
   border-radius: 50%;
   border: 2px solid gray;
-  vertical-align: bottom;
 }
 
 .availability::before{
