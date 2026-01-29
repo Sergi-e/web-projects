@@ -86,6 +86,13 @@ input:not(.availability), textarea{
   background-color: midnightblue;
 }
 
+input, textarea:focus{
+    border-color: aquamarine;
+}
+
+input, select, textarea:invalid{
+    border-color: red;
+}
 
 
 
