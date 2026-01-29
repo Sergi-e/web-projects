@@ -29,14 +29,14 @@ fieldset legend{
   font-weight: 600;
 }
 
-label:not(#availability){
+label:not(#availab-status){
     display: block;
     color:azure;
     font-size: 1.2rem;
     margin: auto;
 }
 
-input:not(.availability), textarea{
+input:not(.availab-status), textarea{
   background-color: aliceblue;
   width: 95%;
   border: 1px solid gray;
