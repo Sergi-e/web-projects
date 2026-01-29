@@ -17,6 +17,13 @@ h1{
     box-shadow: 0 5px 15px black;
 }
 
+fieldset{
+  border: 1px solid gray;
+  border-radius: 5px;
+  margin: 20px 0;
+  padding: 20px;
+}
+
 label:not(#availability){
     display: block;
     color:azure;
