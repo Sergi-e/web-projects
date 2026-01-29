@@ -36,7 +36,7 @@ label:not(#availab-status){
     margin: auto;
 }
 
-input:not(.availab-status), textarea{
+input:not(.availability), textarea{
   background-color: aliceblue;
   width: 95%;
   border: 1px solid gray;
@@ -44,7 +44,7 @@ input:not(.availab-status), textarea{
   padding: 10px;
 }
 
-.available {
+.availability {
   appearance: none;
   width: 20px;
   height: 20px;
@@ -53,7 +53,7 @@ input:not(.availab-status), textarea{
   vertical-align: bottom;
 }
 
-.available::before{
+.availability::before{
   display: block;
   content: " ";
   width: 10px;
@@ -63,7 +63,7 @@ input:not(.availab-status), textarea{
   transition: all 0.3s ease-in;
 }
 
-.available::before {
+.availability::before {
   transform: translate(3px, 3px) scale(1);
   background-color: lightgreen;
 }
