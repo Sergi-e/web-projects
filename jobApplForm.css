@@ -44,7 +44,7 @@ input:not(#name, #email), textarea{
   padding: 10px;
 }
 
-.submit-btn {
+#submit-btn {
   cursor: pointer;
   background-color: royalblue;
   color: whitesmoke;
@@ -56,7 +56,7 @@ input:not(#name, #email), textarea{
   margin: auto;
 }
 
-.submit-btn:hover{
+#submit-btn:hover{
   background-color: midnightblue;
 }
 
