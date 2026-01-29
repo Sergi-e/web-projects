@@ -37,11 +37,35 @@ label:not(#availability){
 }
 
 input:not(#name, #email), textarea{
-  background-color: #ffffff1a;
+  background-color: aliceblue;
   width: 95%;
   border: 1px solid gray;
   border-radius: 5px;
   padding: 10px;
+}
+
+.radio-btn {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid gray;
+  vertical-align: bottom;
+}
+
+.radio-btn::before{
+  display: block;
+  content: " ";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(3px, 3px) scale(0);
+  transition: all 0.3s ease-in;
+}
+
+.radio-btn:checked::before {
+  transform: translate(3px, 3px) scale(1);
+  background-color: lightgreen;
 }
 
 #submit-btn {
